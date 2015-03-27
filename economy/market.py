@@ -6,23 +6,18 @@ class Blacksmith:
     def buy(self, quantity):
         if (quantity<=self.swords):
             self.swords -= quantity
-            self.say("Sold you {} swords".format(quantity))
+            return True
         else:
-            self.say("Can't sell you {} swords. Only have {}".format(quantity, self.swords))
+            return False
             
             
     def sell(self, quantity):
         self.swords += quantity
-        self.say("Bought {} swords from you.".format(quantity))
+        return True
         
-    def inventory(self, quiet = False):
-        if not quiet:
-            self.say("I have {} swords to sell".format(self.swords));
+    def inventory(self):
         return self.swords
         
-
-    def say(self, what):
-        print("{}: {}".format(self.name, what))
 
 import random
 
@@ -86,12 +81,23 @@ def distribute(quantity, total_stock, seed):
     '''
     return quantities
     
-    
+class MarketStateComponent:
+    def __init__(self):
+        pass
+
+
+class GameObject:
+    def __init__(self):
+        pass
+
+    def getComponent(self, name):
+        pass
+
 class Market:
     def __init__(self, state, seed, deltas = {}):
-        (quantity, total_stock, total_delta) = state
+        (quantity, total_stock) = state
         names = ("Smithy "+chr(ord('A')+i) for i in range(quantity))
-        self.generated_stocks = distribute(quantity, total_stock-total_delta, seed)
+        self.generated_stocks = distribute(quantity, total_stock, seed)
         corrected_stocks = list(self.generated_stocks)
         for i, delta in deltas.items():
             corrected_stocks[i] += delta
@@ -99,49 +105,20 @@ class Market:
         self.merchants = [Blacksmith(n, s) for n, s in zip(names, corrected_stocks)]
         
     def state(self):
-        deltas = dict((i, merchant.inventory(True)-stock) for i, (stock, merchant) in enumerate(zip(self.generated_stocks, self.merchants)) if stock != merchant.inventory(True))
-        m = (len(self.merchants), sum(m.inventory(True) for m in self.merchants), sum(deltas.values()))
-        return m, deltas
+        m = (len(self.merchants), sum(self.generated_stocks))
+        return m
+
+    def deltas(self):
+        deltas = dict((i, merchant.inventory()-stock) for i, (stock, merchant) in enumerate(zip(self.generated_stocks, self.merchants)) if stock != merchant.inventory())
+        return deltas
         
     def inventory(self):
-        print("Available merchants: ")
-        for bl in self.merchants:
-            bl.inventory()
+        return dict([(bl.name, bl.inventory()) for bl in self.merchants])
+            
             
     def merchant(self, i):
         return self.merchants[i]
         
         
-state = (4, 20, 0)
-town_a_market = Market(state, 'seed')
 
-town_a_market.inventory()
-town_a_market.merchant(0).buy(1)
-town_a_market.inventory()
-print("Leaving market")
-final_state, deltas = town_a_market.state()
-
-print("Market state",final_state, deltas)
-print("Back to market")
-town_a_market = Market(final_state, 'seed', deltas)
-town_a_market.inventory()
-town_a_market.merchant(0).buy(2)
-town_a_market.merchant(3).sell(3)
-town_a_market.inventory()
-
-print("Leaving market")
-final_state, deltas = town_a_market.state()
-print("Market state",final_state, deltas)
-
-print("Back to market")
-town_a_market = Market(final_state, 'seed', deltas)
-town_a_market.inventory()
-
-print("Leaving market for a long while")
-final_state, deltas = town_a_market.state()
-print("Market state",final_state, deltas)
-
-print("Back to market")
-town_a_market = Market(final_state, 'seed1')
-town_a_market.inventory()
 
