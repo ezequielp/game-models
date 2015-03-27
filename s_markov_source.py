@@ -23,7 +23,7 @@ redo = False;
 
 ## Markov chain with sources.
 nT       = 100; # numboer of iteration
-n_cities = 3; # numer of cities
+n_cities = 4; # numer of cities
 
 # Total amount of stuff
 total_stock    = np.zeros([nT,1]);
@@ -47,7 +47,7 @@ if redo or ('A' not in locals()):
 # Source emission
 def S_rate(t): return np.round(10*np.multiply(1-np.exp(-t/20),np.exp(-t/50)));
 # Source connection to cities
-s = np.array([0.7, 0.2, 0.1]);
+s = np.array([0.7, 0.2, 0.1, 0.0]);
 
 # Sink strength
 def D_rate(t): return 10*abs(np.sin(2*np.pi*t/60)**7);
@@ -74,7 +74,8 @@ plt.clf();
 plt.subplot(3,1,1)
 plt.plot(n.T)
 plt.ylabel("Stuff per city")
-plt.legend(["A","B","C"])
+names = ("City "+chr(ord('A')+i) for i in range(n_cities))
+plt.legend(list(names))
 
 plt.subplot(3,1,2)
 plt.plot(total_stock)
