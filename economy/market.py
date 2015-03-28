@@ -10,7 +10,6 @@ class Blacksmith:
         else:
             return False
             
-            
     def sell(self, quantity):
         self.swords += quantity
         return True
@@ -64,35 +63,11 @@ def random_permutation(iterable, r=None):
     return tuple(random.sample(pool, r))
 
 def distribute(quantity, total_stock, seed):
-    
     random.seed(seed)
     quantities = marinbin (total_stock, quantity, 1)
     
-    '''
-    quantities = sorted([random.randint(0, total_stock) for i in range(quantity-1)], reverse = True)
-    cumulative = [sum(quantities[:i+1]) for i in range(len(quantities))]
-    import pdb
-    pdb.set_trace()
-    if cumulative[-1]>total_stock:
-        imax = next(i for i, q in enumerate(cumulative) if q>total_stock)
-        cumulative[imax:] = [0]**(10-imax)
-    else:
-        quantities.append(total_stock-cumulative[-1])
-    '''
     return quantities
     
-class MarketStateComponent:
-    def __init__(self):
-        pass
-
-
-class GameObject:
-    def __init__(self):
-        pass
-
-    def getComponent(self, name):
-        pass
-
 class Market:
     def __init__(self, state, seed, deltas = {}):
         (quantity, total_stock) = state
