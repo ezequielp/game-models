@@ -49,7 +49,7 @@ class Economy():
               if v == 'rest':
                   r = sum([x for e,x in nx.get_edge_attributes(m,k).items() \
                                         if e[0] == source])
-                  traffic[k] = np.round((1.0 - r)*1e3) / 1e3
+                  traffic[k] = np.round((1.0 - r)*1e8) / 1e8
 
       self.map.add_edge(source,to,name=name,**traffic)
 
