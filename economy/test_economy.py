@@ -21,10 +21,11 @@ class EconomyTestCase(unittest.TestCase):
 		self.economy.add_route("route 6", source = "town c", to = "town b", traffic = (0.4,))
 		self.economy.add_route("route 7", source = "town c", to = "town d", traffic = ("rest",))
 
+		self.economy.add_route("route 8", source = "town d", to = "town d", traffic = ("rest",))
 
-#	def test_contains(self):
-#		self.assertTrue("town a" in self.economy)
-#		self.assertTrue("route 1" in self.economy) #Is this useful?
+	def test_contains(self):
+		self.assertTrue("town a" in self.economy)
+		self.assertTrue("route 1" in self.economy) #Is this useful?
 
 	def test_route(self):
 		self.assertEquals(0.8, self.economy.route("route 1", "swords"))
@@ -48,10 +49,10 @@ class EconomyTestCase(unittest.TestCase):
 		self.economy.step()
 
 		# Existences on each market change
-#		self.assertEquals(xx, self.economy.market("town a", "swords"))
-#		self.assertEquals(xx, self.economy.market("town b", "swords"))
-#		self.assertEquals(xx, self.economy.market("town c", "swords"))
-#		self.assertEquals(xx, self.economy.market("town d", "swords"))
+		self.assertEquals(6, self.economy.market("town a", "swords"))
+		self.assertEquals(22, self.economy.market("town b", "swords"))
+		self.assertEquals(14, self.economy.market("town c", "swords"))
+		self.assertEquals(43, self.economy.market("town d", "swords"))
 
 		# Routes are not affected
 		self.assertEquals(0.8, self.economy.route("route 1", "swords"))

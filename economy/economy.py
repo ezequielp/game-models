@@ -3,6 +3,7 @@ import numpy as np
 
 from itertools import chain
 from collections import OrderedDict as odict
+
 class Economy():
   def __init__(self, tradeables):
       self.map         = nx.MultiDiGraph()
@@ -12,6 +13,8 @@ class Economy():
 
   def __iter__(self):
       return chain(self.market_names(), self.route_names())
+  def __contains__(self, element):
+    return element in chain(self.market_names(), self.route_names())
 
   def add_market(self, name, **inventory):
       # Validate data
@@ -44,20 +47,13 @@ class Economy():
 
       # Replace 'rest' by value
           m = self.map
-
           for k,v in traffic.items():
               if v == 'rest':
                   r = sum([x for e,x in nx.get_edge_attributes(m,k).items() \
                                         if e[0] == source])
                   traffic[k] = np.round((1.0 - r)*1e8) / 1e8
 
-      self.map.add_edge(source,to,name=name,**traffic)
-
-  def step(self):
-    pass
-
-  def __contains__(self, element):
-    pass
+      m.add_edge(source,to,name=name,**traffic)
 
   # Getters
   def market(self, name, trade = None):
@@ -78,18 +74,39 @@ class Economy():
   def market_names(self):
       return self.map.nodes_iter()
 
+  def calc_stock(self, stuff):
+      return sum (x[1][stuff] for x in self.map.nodes_iter(data=True))
+
   # Matrix and evolution functions
   def __assemble_chain__(self):
-      self.__tradeable_order__ = self.total_stock.keys()
-      self.__market_order__     = self.map.nodes()
+      nx.freeze(self.map)
 
-      N = len(self.__market_order__)
-      K = len(self.__tradeable_order__)
+      self.__tradeable_order__ = self.total_stock.keys()
+      self.__market_order__    = self.map.nodes()
+
       self.matrix = []
-      for k in range(K):
+      self.state  = []
+      for k in self.__tradeable_order__:
           # This produces a left stochastic matrix
-          A = nx.attr_matrix(self.map, 'traffic', rc_order=self.__market_order__)
+          A = nx.attr_matrix(self.map, edge_attr=k, rc_order=self.__market_order__)
           if not all(x == 1 for x in np.sum(A,axis=1)):
               raise ValueError('Route traffics are not normalized')
-
           self.matrix.append(A)
+
+          P = np.matrix([n[1][k]/self.total_stock[k] for n in self.map.nodes_iter(data=True)])
+          self.state.append(P)
+
+  def step(self):
+      if not nx.is_frozen(self.map):
+          self.__assemble_chain__()
+
+      for i,k in enumerate(self.__tradeable_order__):
+          p_ = self.state[i] * self.matrix[i]
+          dn = 0.0
+          #dn = s * S_rate (i) - d * D_rate(i); # sources dist
+          n_ = np.round(np.maximum(p_ * self.total_stock[k] + dn, 0.0));
+          nx.set_node_attributes(self.map, k, \
+                                dict(zip(self.__market_order__,n_.tolist()[0])))
+          self.total_stock[k] = self.calc_stock(k);
+
+          self.state[i] = n_ / self.total_stock[k];
