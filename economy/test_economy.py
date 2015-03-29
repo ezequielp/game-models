@@ -8,24 +8,24 @@ return ret
 
 
 class EconomyTestCase(unittest.TestCase):
-	def setUp(self):		
+	def setUp(self):
 
 		self.economy = economy.Economy(tradeables = ('swords',))
-		
-		self.economy.add_market("town a", swords = 10) 
+
+		self.economy.add_market("town a", swords = 10)
 		self.economy.add_market("town b", swords = 20)
 		self.economy.add_market("town c", swords = 30)
 		self.economy.add_market("town d", swords = 25)
 
-		self.economy.add_route("route 1", from = "town a", to = "town b", traffic = (0.8,))
-		self.economy.add_route("route 2", from = "town a", to = "town c", traffic = "rest")
+		self.economy.add_route("route 1", source = "town a", to = "town b", traffic = (0.8,))
+		self.economy.add_route("route 2", source = "town a", to = "town c", traffic = "rest")
 
-		self.economy.add_route("route 3", from = "town b", to = "town a", traffic = (0.3,))
-		self.economy.add_route("route 4", from = "town b", to = "town c", traffic = (0.6,))
-		self.economy.add_route("route 5", from = "town b", to = "town b", traffic = "rest")
+		self.economy.add_route("route 3", source = "town b", to = "town a", traffic = (0.3,))
+		self.economy.add_route("route 4", source = "town b", to = "town c", traffic = (0.6,))
+		self.economy.add_route("route 5", source = "town b", to = "town b", traffic = "rest")
 
-		self.economy.add_route("route 6", from = "town c", to = "town b", traffic = (0.4,))
-		self.economy.add_route("route 7", from = "town c", to = "town d", traffic = "rest")
+		self.economy.add_route("route 6", source = "town c", to = "town b", traffic = (0.4,))
+		self.economy.add_route("route 7", source = "town c", to = "town d", traffic = "rest")
 
 
 	def test_contains(self):
@@ -65,4 +65,3 @@ class EconomyTestCase(unittest.TestCase):
 		self.assertEquals(0.3, self.economy.route("route 3", "swords"))
 		self.assertEquals(0.1, self.economy.route("route 4", "swords"))
 		self.assertEquals(0.6, self.economy.route("route 5", "swords"))
-
