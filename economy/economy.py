@@ -77,6 +77,15 @@ class Economy():
   def calc_stock(self, stuff):
       return sum (x[1][stuff] for x in self.map.nodes_iter(data=True))
 
+  def plot_graph(self, stuff):
+      import matplotlib.pyplot as plt
+      plt.ion()
+      plt.axis('off')
+      pos = nx.spring_layout(self.map)
+      nx.draw_networkx (self.map, pos=pos, node_size=4000)
+      traffic = dict([(e[0:2],e[2][stuff]) for e in self.map.edges_iter(data=True)])
+      nx.draw_networkx_edge_labels (self.map, pos=pos, edge_labels=traffic, label_pos=0.7)
+      plt.title(stuff)
   # Matrix and evolution functions
   def __assemble_chain__(self):
       nx.freeze(self.map)
