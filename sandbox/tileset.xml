@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<resource>
+	<tileset id="map">
+		<tile id="grass">
+			<image file="assets/green.png"></image>
+		</tile>
+		<tile id="forest">
+			<image file="assets/green.png"></image>
+		</tile>
+		<tile id="town">
+			<image file="assets/human-city-grass.png"></image>
+		</tile>
+		<tile id="water">
+			<image file="assets/coast-tile.png"></image>
+		</tile>
+	</tileset>
+</resource>
