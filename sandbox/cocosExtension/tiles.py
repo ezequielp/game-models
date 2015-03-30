@@ -1,12 +1,12 @@
 from cocos import tiles
 from math import floor
 
-class RegularHexCell(tiles.HexCell):
+class WesnothHexCell(tiles.HexCell):
     def __init__(self, i, j, height, properties, tile):
         width = height
         tiles.Cell.__init__(self, i, j, width, height, properties, tile)
 
-class RegularHexMap(tiles.HexMap):
+class WesnothHexMap(tiles.HexMap):
     def get_key_at_pixel(self, x, y):
         """returns the grid coordinates for the hex that covers the point (x, y)
 
@@ -30,12 +30,12 @@ class RegularHexMap(tiles.HexMap):
             ci = ci - 1
         return ci, cj
 
-class RegularHexMapLayer(RegularHexMap, tiles.MapLayer):
+class WesnothHexMapLayer(WesnothHexMap, tiles.MapLayer):
     def __init__(self, id, th, cells, origin=None, properties=None):
-        RegularHexMap.__init__(self, id, th, cells, origin, properties)
+        WesnothHexMap.__init__(self, id, th, cells, origin, properties)
         tiles.MapLayer.__init__(self, properties)
 
-def truncated_hexmap_factory(resource, tag):
+def wesnoth_hexmap_factory(resource, tag):
     height = int(tag.get('tile_height'))
     width = height
     origin = tag.get('origin')
@@ -55,10 +55,10 @@ def truncated_hexmap_factory(resource, tag):
             else:
                 tile = None
             properties = tiles._handle_properties(tag)
-            c.append(RegularHexCell(i, j, height, properties, tile))
+            c.append(WesnothHexCell(i, j, height, properties, tile))
 
     properties = tiles._handle_properties(tag)
-    m = RegularHexMapLayer(id, height, cells, origin, properties)
+    m = WesnothHexMapLayer(id, height, cells, origin, properties)
     resource.add_resource(id, m)
 
     return m

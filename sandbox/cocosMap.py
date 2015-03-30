@@ -1,7 +1,7 @@
 import cocosExtension.tiles as newtiles
 import cocos, pyglet
 
-cocos.tiles.Resource.register_factory('regularhexmap')(newtiles.truncated_hexmap_factory)
+cocos.tiles.Resource.register_factory('regularhexmap')(newtiles.wesnoth_hexmap_factory)
 
 #class Peasant(cocos.sprite.Sprite):
 #	def __init__(self):
