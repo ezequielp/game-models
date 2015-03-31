@@ -1,3 +1,4 @@
+from __future__ import division
 import networkx as nx
 import numpy as np
 
@@ -51,9 +52,13 @@ class Economy():
               if v == 'rest':
                   r = sum([x for e,x in nx.get_edge_attributes(m,k).items() \
                                         if e[0] == source])
-                  traffic[k] = np.round((1.0 - r)*1e8) / 1e8
+                  traffic[k] = 1.0 - r
+                  #traffic[k] = np.round((1.0 - r)*1e8) / 1e8
 
       m.add_edge(source,to,name=name,**traffic)
+
+  def del_route(self, name):
+      raise NotImplementedError("ToDo")
 
   # Getters
   def market(self, name, trade = None):
@@ -117,5 +122,4 @@ class Economy():
           nx.set_node_attributes(self.map, k, \
                                 dict(zip(self.__market_order__,n_.tolist()[0])))
           self.total_stock[k] = self.calc_stock(k);
-
           self.state[i] = n_ / self.total_stock[k];

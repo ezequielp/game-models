@@ -1,5 +1,6 @@
 import economy
 import unittest
+from numpy import round
 
 class EconomyTestCase(unittest.TestCase):
 	def setUp(self):
@@ -28,11 +29,11 @@ class EconomyTestCase(unittest.TestCase):
 		self.assertTrue("route 1" in self.economy) #Is this useful?
 
 	def test_route(self):
-		self.assertEqual(0.8, self.economy.route("route 1", "swords"))
-		self.assertEqual(0.2, self.economy.route("route 2", "swords"))
-		self.assertEqual(0.3, self.economy.route("route 3", "swords"))
-		self.assertEqual(0.6, self.economy.route("route 4", "swords"))
-		self.assertEqual(0.1, self.economy.route("route 5", "swords"))
+		self.assertEqual(0.8, round(1e8*self.economy.route("route 1", "swords"))/1e8)
+		self.assertEqual(0.2, round(1e8*self.economy.route("route 2", "swords"))/1e8)
+		self.assertEqual(0.3, round(1e8*self.economy.route("route 3", "swords"))/1e8)
+		self.assertEqual(0.6, round(1e8*self.economy.route("route 4", "swords"))/1e8)
+		self.assertEqual(0.1, round(1e8*self.economy.route("route 5", "swords"))/1e8)
 
 	def test_market(self):
 		self.assertEqual(10, self.economy.market("town a", "swords"))
@@ -42,21 +43,21 @@ class EconomyTestCase(unittest.TestCase):
 
 	def test_route_default_traffic(self): #I'm assuming defining a route without traffic sets it to what it takes to add up to 1
 		self.economy.step()
-		self.assertEqual(0.2, self.economy.route("route 2", "swords"))
-		self.assertEqual(0.1, self.economy.route("route 5", "swords"))
+		self.assertEqual(0.2, round(1e8*self.economy.route("route 2", "swords"))/1e8)
+		self.assertEqual(0.1, round(1e8*self.economy.route("route 5", "swords"))/1e8)
 
 	def test_step(self):
 		self.economy.step()
 
 		# Existences on each market change
-		self.assertEqual(6, self.economy.market("town a", "swords"))
-		self.assertEqual(22, self.economy.market("town b", "swords"))
-		self.assertEqual(14, self.economy.market("town c", "swords"))
-		self.assertEqual(43, self.economy.market("town d", "swords"))
+		self.assertEqual(6, round(1e8*self.economy.market("town a", "swords"))/1e8)
+		self.assertEqual(22, round(1e8*self.economy.market("town b", "swords"))/1e8)
+		self.assertEqual(14, round(1e8*self.economy.market("town c", "swords"))/1e8)
+		self.assertEqual(43, round(1e8*self.economy.market("town d", "swords"))/1e8)
 
 		# Routes are not affected
-		self.assertEqual(0.8, self.economy.route("route 1", "swords"))
-		self.assertEqual(0.2, self.economy.route("route 2", "swords"))
-		self.assertEqual(0.3, self.economy.route("route 3", "swords"))
-		self.assertEqual(0.6, self.economy.route("route 4", "swords"))
-		self.assertEqual(0.1, self.economy.route("route 5", "swords"))
+		self.assertEqual(0.8, round(1e8*self.economy.route("route 1", "swords"))/1e8)
+		self.assertEqual(0.2, round(1e8*self.economy.route("route 2", "swords"))/1e8)
+		self.assertEqual(0.3, round(1e8*self.economy.route("route 3", "swords"))/1e8)
+		self.assertEqual(0.6, round(1e8*self.economy.route("route 4", "swords"))/1e8)
+		self.assertEqual(0.1, round(1e8*self.economy.route("route 5", "swords"))/1e8)
