@@ -1,0 +1,177 @@
+<?xml version="1.0"?>
+<resource>
+	<tileset id="map">
+		<tile id="empty">
+		</tile>
+	</tileset>
+	<regularhexmap id="test" tile_height="72">
+		<column>
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+		</column>
+		<column>
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+		</column>
+		<column>
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+		</column>
+		<column>
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+		</column>
+		<column>
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+		</column>
+		<column>
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+		</column>
+		<column>
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+		</column>
+		<column>
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+		</column>
+		<column>
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+		</column>
+		<column>
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+		</column>
+		<column>
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+		</column>
+		<column>
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+			<cell tile="empty" />
+		</column>
+	</regularhexmap>
+</resource>
