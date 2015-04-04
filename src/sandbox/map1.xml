@@ -34,7 +34,9 @@
 			<cell tile="tls:water" />
 			<cell tile="tls:grass" />
 			<cell tile="tls:grass" />
-			<cell tile="tls:town" town_name="town a"/>
+			<cell tile="tls:town">
+				<property name="town_name" value="town a" />
+			</cell>
 			<cell tile="tls:grass" />
 			<cell tile="tls:grass" />
 			<cell tile="tls:grass" />
@@ -67,49 +69,9 @@
 			<cell tile="tls:grass" />
 			<cell tile="tls:grass" />
 			<cell tile="tls:grass" />
-			<cell tile="tls:town" town_name="town b"/>
-			<cell tile="tls:grass" />
-			<cell tile="tls:grass" />
-			<cell tile="tls:water" />
-		</column>
-		<column>
-			<cell tile="tls:water" />
-			<cell tile="tls:grass" />
-			<cell tile="tls:grass" />
-			<cell tile="tls:grass" />
-			<cell tile="tls:grass" />
-			<cell tile="tls:grass" />
-			<cell tile="tls:grass" />
-			<cell tile="tls:grass" />
-			<cell tile="tls:grass" />
-			<cell tile="tls:grass" />
-			<cell tile="tls:grass" />
-			<cell tile="tls:water" />
-		</column>
-		<column>
-			<cell tile="tls:water" />
-			<cell tile="tls:grass" />
-			<cell tile="tls:grass" />
-			<cell tile="tls:grass" />
-			<cell tile="tls:grass" />
-			<cell tile="tls:grass" />
-			<cell tile="tls:grass" />
-			<cell tile="tls:grass" />
-			<cell tile="tls:grass" />
-			<cell tile="tls:grass" />
-			<cell tile="tls:grass" />
-			<cell tile="tls:water" />
-		</column>
-		<column>
-			<cell tile="tls:water" />
-			<cell tile="tls:grass" />
-			<cell tile="tls:grass" />
-			<cell tile="tls:grass" />
-			<cell tile="tls:grass" />
-			<cell tile="tls:grass" />
-			<cell tile="tls:grass" />
-			<cell tile="tls:grass" />
-			<cell tile="tls:grass" />
+			<cell tile="tls:town">
+				<property name="town_name" value="town b" />
+			</cell>
 			<cell tile="tls:grass" />
 			<cell tile="tls:grass" />
 			<cell tile="tls:water" />
@@ -148,7 +110,51 @@
 			<cell tile="tls:grass" />
 			<cell tile="tls:grass" />
 			<cell tile="tls:grass" />
-			<cell tile="tls:town" town_name="town c"/>
+			<cell tile="tls:grass" />
+			<cell tile="tls:grass" />
+			<cell tile="tls:grass" />
+			<cell tile="tls:grass" />
+			<cell tile="tls:grass" />
+			<cell tile="tls:grass" />
+			<cell tile="tls:water" />
+		</column>
+		<column>
+			<cell tile="tls:water" />
+			<cell tile="tls:grass" />
+			<cell tile="tls:grass" />
+			<cell tile="tls:grass" />
+			<cell tile="tls:grass" />
+			<cell tile="tls:grass" />
+			<cell tile="tls:grass" />
+			<cell tile="tls:grass" />
+			<cell tile="tls:grass" />
+			<cell tile="tls:grass" />
+			<cell tile="tls:grass" />
+			<cell tile="tls:water" />
+		</column>
+		<column>
+			<cell tile="tls:water" />
+			<cell tile="tls:grass" />
+			<cell tile="tls:grass" />
+			<cell tile="tls:grass" />
+			<cell tile="tls:grass" />
+			<cell tile="tls:grass" />
+			<cell tile="tls:grass" />
+			<cell tile="tls:grass" />
+			<cell tile="tls:grass" />
+			<cell tile="tls:grass" />
+			<cell tile="tls:grass" />
+			<cell tile="tls:water" />
+		</column>
+		<column>
+			<cell tile="tls:water" />
+			<cell tile="tls:grass" />
+			<cell tile="tls:grass" />
+			<cell tile="tls:grass" />
+			<cell tile="tls:grass" />
+			<cell tile="tls:town" >
+				<property name="town_name" value="town c" />
+			</cell>
 			<cell tile="tls:grass" />
 			<cell tile="tls:grass" />
 			<cell tile="tls:grass" />

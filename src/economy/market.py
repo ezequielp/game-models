@@ -24,6 +24,8 @@ def marinbin (nmar, nbin, some=None):
     ## Returns the position of nmar in nbin, allowing the marbles to be in the same bin.
     import itertools
 
+    if nmar == 0:
+        return [0]*nbin
     ## This is standard stars and bars.
     numsymbols = nbin+nmar-1;
     stars = []

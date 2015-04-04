@@ -87,7 +87,8 @@ def wesnoth_hexmap_factory(resource, tag):
                 tile = resource.get_resource(tile)
             else:
                 tile = None
-            properties = tiles._handle_properties(tag)
+
+            properties = tiles._handle_properties(cell)
             c.append(WesnothHexCell(i, j, height, properties, tile))
 
     properties = tiles._handle_properties(tag)

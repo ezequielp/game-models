@@ -9,6 +9,7 @@
 		</tile>
 		<tile id="town">
 			<image file="assets/human-city-grass.png"></image>
+			<property type="bool" name="market" value="True"/>
 		</tile>
 		<tile id="water">
 			<image file="assets/coast-tile.png"></image>
