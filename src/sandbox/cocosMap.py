@@ -59,29 +59,62 @@ class Sandbox(cocos.layer.ColorLayer, pyglet.event.EventDispatcher):
 			clicked, self.clicked = self.clicked, None
 			self.dispatch_event('on_tile_clicked', clicked)
 
-	def toggle_town_names(self, show):
-		for town in self.current_map.find_cells(market = True):
-			try:
-				self.current_map.remove("town name " + town['town_name'])
-			except:
-				if show:
-					title = Label(town['town_name'], anchor_x = 'center', anchor_y = "top")
-					title.position = town.midbottom
-					self.current_map.add(title, name="town name " + town['town_name'])
 
-		return True
+
 
 Sandbox.register_event_type('on_tile_clicked')
 from cocos.text import Label
+import cocos.draw
+import numpy as np
+from math import cos, sin, radians, atan2
+def rotationMatrix(angle):
+	angle = radians(angle)
+	return np.array([[cos(angle), -sin(angle)], [sin(angle), cos(angle)]])
+
+rot1 = rotationMatrix(150)
+rot2 = rotationMatrix(-150)
+
+class Arrow(cocos.draw.Canvas):
+	def __init__(self, start, end, color, width=1):
+		super(Arrow, self).__init__()
+		self.start = start
+		end = np.array(end)
+		start = np.array(start)
+		length = float(np.linalg.norm(end-start))
+		width = float(width)
+		base_length = length-width
+
+
+		self.p = [(width/2, 0), (width/2, base_length), (width, base_length), (0, length), (-width, base_length), (-width/2, base_length), (-width/2, 0), (width/2, 0)]
+
+		self.color = color
+		self.stroke_width = 1
+		self.angle = atan2((end-start)[0], (end-start)[1])
+
+	def render(self):
+		self.set_color( self.color )
+		self.set_stroke_width( self.stroke_width )
+
+		self.translate(self.start)
+		self.rotate(-self.angle)
+		self.move_to( self.p[0] )
+		for p in self.p[1:]:
+			self.line_to( p )
+		
+		
+
+		
 
 class EconomyInspector(cocos.layer.ColorLayer):
-	def __init__(self, economy):
+	def __init__(self, economy, map):
 		super(EconomyInspector, self).__init__(20, 20, 20, 128, width = 100, height = 100)
 		self.visible = False
 		self.economy = economy
+		self.map = map
+		self.arrows = []
 
 	def on_tile_clicked(self, tile):
-		if 'town_name' in tile:
+		if tile and 'town_name' in tile:
 			if tile['town_name'] in self.economy:
 				from economy.market import Market
 
@@ -103,6 +136,43 @@ class EconomyInspector(cocos.layer.ColorLayer):
 				self.add(text, name = "text")
 				self.visible = True
 
+	def get_tradeables(self):
+		return self.economy.total_stock.keys()
+
+	def toggle_routes(self, tradeable, state, outgoing = False, incoming = False):
+		find_params = {}
+		markets = self.map.find_cells(market = True)
+		markets = dict((mkt['town_name'], mkt) for mkt in markets)
+		for a in self.arrows:
+			self.map.remove(a)
+		self.arrows = []
+		if state:
+			for route, source, destination in self.economy.routes():
+				if source == destination:
+					continue
+				destination = np.array(markets[destination].center)
+				source = np.array(markets[source].center)
+				displacement = destination-source
+				displacement = displacement/np.linalg.norm(displacement)
+				source = source + 50*displacement
+				destination = source + 100*displacement
+				arrow = Arrow(source.tolist(), destination.tolist() , (255, 255, 255, 200), width=int(50*self.economy.route(route, trade = tradeable)))
+
+				self.map.add(arrow)
+				self.arrows.append(arrow)
+		return True
+
+	def toggle_town_names(self, show):
+		for town in self.map.find_cells(market = True):
+			try:
+				self.map.remove("town name " + town['town_name'])
+			except:
+				if show:
+					title = Label(town['town_name'], anchor_x = 'center', anchor_y = "bottom")
+					title.position = town.midbottom
+					self.map.add(title, name="town name " + town['town_name'])
+
+		return True
 	def refresh(self):
 		self.on_exit()
 		self.on_enter()
@@ -119,8 +189,6 @@ class Toggle(cocos.layer.ColorLayer):
 		self.label.position = self.width/2, self.label.element.content_height/2
 		self.add(self.label)
 
-	
-
 	def refresh(self):
 		self.on_exit()
 		self.on_enter()
@@ -135,13 +203,11 @@ class Toggle(cocos.layer.ColorLayer):
 
 class SidePanel(cocos.layer.ColorLayer):
 	is_event_handler = True
-	def __init__(self, economy, sandbox):
-		self.economy = economy
-
-		tradeables = economy.total_stock.keys()
-
-		toggles = [Toggle(tradeable, width = 200, on_toggle = lambda state: self.show_routes(tradeable, state) ) for tradeable in tradeables] + \
-			[Toggle("Show town names", width  = 200, on_toggle = lambda state: sandbox.toggle_town_names(state))]
+	def __init__(self,  economy_inspector):
+		tradeables = economy_inspector.get_tradeables()
+		toggles = [Toggle(tradeable, width = 200, on_toggle = lambda state: economy_inspector.toggle_routes(tradeable, state, outgoing = True) ) for tradeable in tradeables]
+		toggles.append(Toggle("Show outgoing for:", width  = 200, on_toggle = lambda state: False))
+		toggles.append(Toggle("Show town names", width  = 200, on_toggle = lambda state: economy_inspector.toggle_town_names(state)))
 
 		height =  max(t.label.element.content_height for t in toggles)
 		
@@ -175,10 +241,6 @@ class SidePanel(cocos.layer.ColorLayer):
 
 		return self.toggles[i]
 
-	def show_routes(self, tradeable, new_state):
-		print("switch ", tradeable, new_state)
-		return True
-
 
 	def refresh(self):
 		self.on_exit()
@@ -197,19 +259,19 @@ if __name__ == '__main__':
 	e.add_market('town b', wood = 30)
 	e.add_market('town c', wood = 10)
 
-	e.add_route('a-b path', source="town a", to = "town b", traffic = (0.3,))
-	e.add_route('town a self', source="town a", to = "town a", traffic = (0.3,))
-	e.add_route('a-c path', source="town a", to = "town c", traffic = ('rest',))
-	e.add_route('b-c smuggle', source="town b", to = "town c", traffic = (0.1,))
-	e.add_route('town b self', source="town b", to = "town b", traffic = ("rest",))
-	e.add_route('town c self', source="town c", to = "town c", traffic = ("rest",))
+	e.add_route('a-b path', source="town a", destination = "town b", traffic = (0.3,))
+	e.add_route('town a self', source="town a", destination = "town a", traffic = (0.3,))
+	e.add_route('a-c path', source="town a", destination = "town c", traffic = ('rest',))
+	e.add_route('b-c smuggle', source="town b", destination = "town c", traffic = (0.1,))
+	e.add_route('town b self', source="town b", destination = "town b", traffic = ("rest",))
+	e.add_route('town c self', source="town c", destination = "town c", traffic = ("rest",))
 
 
 	cocos.director.director.init(do_not_scale = True)
 
 	sbx = Sandbox('map1.xml')
-	h = EconomyInspector(e)
-	sp = SidePanel(e, sbx)
+	h = EconomyInspector(e, sbx.current_map)
+	sp = SidePanel(h)
 
 	h.position = (0, 50)
 	sbx.push_handlers(h)
