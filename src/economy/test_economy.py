@@ -12,17 +12,17 @@ class EconomyTestCase(unittest.TestCase):
 		self.economy.add_market("town c", swords = 30)
 		self.economy.add_market("town d", swords = 25)
 
-		self.economy.add_route("route 1", source = "town a", to = "town b", traffic = (0.8,))
-		self.economy.add_route("route 2", source = "town a", to = "town c", traffic = ("rest",))
+		self.economy.add_route("route 1", source = "town a", destination = "town b", traffic = (0.8,))
+		self.economy.add_route("route 2", source = "town a", destination = "town c", traffic = ("rest",))
 
-		self.economy.add_route("route 3", source = "town b", to = "town a", traffic = (0.3,))
-		self.economy.add_route("route 4", source = "town b", to = "town c", traffic = (0.6,))
-		self.economy.add_route("route 5", source = "town b", to = "town b", traffic = ("rest",))
+		self.economy.add_route("route 3", source = "town b", destination = "town a", traffic = (0.3,))
+		self.economy.add_route("route 4", source = "town b", destination = "town c", traffic = (0.6,))
+		self.economy.add_route("route 5", source = "town b", destination = "town b", traffic = ("rest",))
 
-		self.economy.add_route("route 6", source = "town c", to = "town b", traffic = (0.4,))
-		self.economy.add_route("route 7", source = "town c", to = "town d", traffic = ("rest",))
+		self.economy.add_route("route 6", source = "town c", destination = "town b", traffic = (0.4,))
+		self.economy.add_route("route 7", source = "town c", destination = "town d", traffic = ("rest",))
 
-		self.economy.add_route("route 8", source = "town d", to = "town d", traffic = ("rest",))
+		self.economy.add_route("route 8", source = "town d", destination = "town d", traffic = ("rest",))
 
 	def test_contains(self):
 		self.assertTrue("town a" in self.economy)
@@ -61,3 +61,12 @@ class EconomyTestCase(unittest.TestCase):
 		self.assertEqual(0.3, round(1e8*self.economy.route("route 3", "swords"))/1e8)
 		self.assertEqual(0.6, round(1e8*self.economy.route("route 4", "swords"))/1e8)
 		self.assertEqual(0.1, round(1e8*self.economy.route("route 5", "swords"))/1e8)
+
+	def test_find_routes(self):
+		self.assertEqual(set("route 1", "route 2"), self.economy.find_routes(source = "town a"))
+		self.assertEqual(set("route 3", "route 4", "route 5"), self.economy.find_routes(source = "town b"))
+
+		self.assertEqual(set("route 3"), self.economy.find_routes(destination = "town a"))
+		self.assertEqual(set("route 1", "route 5", "route 6"), self.economy.find_routes(destination = "town b"))
+		
+

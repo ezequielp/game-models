@@ -33,11 +33,11 @@ class Economy():
       self.map.add_node(name, **inventory)
 
 
-  def add_route(self, name, source = None, to = None, traffic = None):
+  def add_route(self, name, source = None, destination = None, traffic = None):
       # Validate data
       n = list(self.market_names())
-      if source not in n or to not in n:
-          raise NameError('Markets {} or {} not in economy.'.format(source,to))
+      if source not in n or destination not in n:
+          raise NameError('Markets {} or {} not in economy.'.format(source,destination))
       if name in self.route_names():
           raise NameError('Route {} already exists.'.format(name))
       ###
@@ -55,7 +55,7 @@ class Economy():
                   traffic[k] = 1.0 - r
                   #traffic[k] = np.round((1.0 - r)*1e8) / 1e8
 
-      m.add_edge(source,to,name=name,**traffic)
+      m.add_edge(source,destination,name=name,**traffic)
 
   def del_route(self, name):
       raise NotImplementedError("ToDo")
