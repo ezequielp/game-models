@@ -63,10 +63,10 @@ class EconomyTestCase(unittest.TestCase):
 		self.assertEqual(0.1, round(1e8*self.economy.route("route 5", "swords"))/1e8)
 
 	def test_find_routes(self):
-		self.assertEqual(set("route 1", "route 2"), self.economy.find_routes(source = "town a"))
-		self.assertEqual(set("route 3", "route 4", "route 5"), self.economy.find_routes(source = "town b"))
+		self.assertEqual(set(("route 1", "town a", "town b"), ("route 2", "town a", "town b")), self.economy.find_routes(source = "town a"))
+		self.assertEqual(set(("route 3", "town b", "town a"), ("route 4", "town b", "town c"), ("route 5", "town b", "town b")), self.economy.find_routes(source = "town b"))
 
-		self.assertEqual(set("route 3"), self.economy.find_routes(destination = "town a"))
-		self.assertEqual(set("route 1", "route 5", "route 6"), self.economy.find_routes(destination = "town b"))
+		self.assertEqual(set(("route 3", "town b", "town a")), self.economy.find_routes(destination = "town a"))
+		self.assertEqual(set(("route 1", "town a", "town b"), ("route 5", "town b", "town b"), ("route 6", "town c", "town b")), self.economy.find_routes(destination = "town b"))
 		
 
