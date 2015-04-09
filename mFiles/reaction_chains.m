@@ -16,7 +16,7 @@
 ## Author: Juan Pablo Carbajal <ajuanpi+dev@gmail.com>
 
 ## Gillespie’s algorithm for stochastic reactions.
-# Code derived from 
+# Code derived from
 # http://www.lamfa.u-picardie.fr/asch/f/t/anglais/ressources/chem_reac.pdf
 
 # Stoichiometric matrix
@@ -35,33 +35,36 @@ X(2) = 10; # quantity of B
 c(1) = 1e-2; c(2) = 1e-4; c(3) = 1e-1; # rates
 
 t      = 0;
-tfinal = 50;
+tfinal = 24;
 Y = X;
 T = t;
 
-### Simulation 
+#c(1) = (P(1)+P(2)-P(3))/T(1);
+#c(2) = (P(3)-P(1)-P(2))/T(2);
+#c(3) = (P(3)-P(2)-P(4))/T(3);
+
+### Simulation
 while t < tfinal
   # Update propensities
-  a(1) = c(1)*X(1)*X(2);
-  a(2) = c(2)*X(3);
-  a(3) = c(3)*X(3);
+  a(1) = c(1) * X(1) * X(2);
+  a(2) = c(2) * X(3);
+  a(3) = c(3) * X(3);
 
   # Update time
   asum = sum (a);
+
+  # Find the index of the reaction that will occur
+  j    = min (find (rand < cumsum(a/asum)));
   tau  = log (1/rand) / asum;
-  
-  # Find th eindex of the reaction that will occur
-  j = min (find (rand < cumsum(a/asum)));
 
   # Update quantities
   X = X + V(:,j);
   t = t + tau;
-  
+
   # Record
   Y(:,end+1) = X;
   T(end+1)   = t;
 end
 
-plot (T, Y.');
+plot (T, Y.','.-');
 legend ({"A","B","C","D"})
-
