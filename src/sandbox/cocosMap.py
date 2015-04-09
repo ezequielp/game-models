@@ -27,7 +27,7 @@ class DraggableScrollingManager(cocos.layer.ScrollingManager):
 			if not self.start_drag:
 				self.start_drag = (x, y)
 				self.start_focus = self.restricted_fx, self.restricted_fy
-			
+
 			self.set_focus(self.start_focus[0]+self.start_drag[0]-x, self.start_focus[1]+self.start_drag[1]-y)
 
 
@@ -35,7 +35,7 @@ class Sandbox(cocos.layer.ColorLayer, pyglet.event.EventDispatcher):
 	is_event_handler = True
 	def __init__(self, mapFile):
 		super( Sandbox, self ).__init__( 20,20,20,255)
-		
+
 		r = cocos.tiles.load(mapFile)
 		level1 = r['level1']
 
@@ -53,7 +53,7 @@ class Sandbox(cocos.layer.ColorLayer, pyglet.event.EventDispatcher):
 	def on_mouse_press(self, x, y, buttons, modifiers):
 		if buttons & pyglet.window.mouse.LEFT:
 			self.clicked = self.get_tile_at_virtual_coord(x, y)
-			
+
 	def on_mouse_release(self, x, y, buttons, modifiers):
 		if buttons & pyglet.window.mouse.LEFT & (self.clicked == self.get_tile_at_virtual_coord(x, y)):
 			clicked, self.clicked = self.clicked, None
@@ -76,12 +76,15 @@ if __name__ == '__main__':
 	e.add_market('town b', wood = 30)
 	e.add_market('town c', wood = 10)
 
-	e.add_route('a-b path', source="town a", destination = "town b", traffic = (0.3,))
-	e.add_route('town a self', source="town a", destination = "town a", traffic = (0.3,))
-	e.add_route('a-c path', source="town a", destination = "town c", traffic = ('rest',))
-	e.add_route('b-c smuggle', source="town b", destination = "town c", traffic = (0.1,))
-	e.add_route('town b self', source="town b", destination = "town b", traffic = ("rest",))
-	e.add_route('town c self', source="town c", destination = "town c", traffic = ("rest",))
+	e.add_route('town a self', source="town a", destination = "town a", traffic = (0.3,0.8))
+	e.add_route('a-b path', source="town a", destination = "town b", traffic = (0.3,0.1))
+	e.add_route('a-c path', source="town a", destination = "town c", traffic = ('rest','rest'))
+
+	e.add_route('b-c smuggle', source="town b", destination = "town c", traffic = (0.1,0.0))
+	e.add_route('b-a path', source="town b", destination = "town a", traffic = (0.1,0.9))
+	e.add_route('town b self', source="town b", destination = "town b", traffic = ("rest","rest"))
+
+	e.add_route('town c self', source="town c", destination = "town c", traffic = ("rest","rest"))
 
 
 	cocos.director.director.init(do_not_scale = True)
@@ -105,4 +108,3 @@ if __name__ == '__main__':
 	main_scene.schedule_interval(lambda x: update(), 2)
 
 	cocos.director.director.run(main_scene)
-
