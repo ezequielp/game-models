@@ -111,7 +111,6 @@ class Economy():
               raise ValueError('Route traffics are not normalized')
           self.matrix.append(A)
 
-          # Not optimal empty stocks are iterated anyways, FIX?
           if self.total_stock[k] > 0:
               P = np.matrix([n[1][k]/self.total_stock[k] for n in self.map.nodes_iter(data=True)])
           else:
@@ -123,12 +122,17 @@ class Economy():
           self.__assemble_chain__()
 
       for i,k in enumerate(self.__tradeable_order__):
-          p_ = self.state[i] * self.matrix[i]
-          dn = 0.0
-          #dn = s * S_rate (i) - d * D_rate(i); # sources dist
-          n_ = np.round(np.maximum(p_ * self.total_stock[k] + dn, 0.0));
-          nx.set_node_attributes(self.map, k, \
-                                dict(zip(self.__market_order__,n_.tolist()[0])))
-          self.total_stock[k] = self.calc_stock(k);
           if self.total_stock[k] > 0:
+              p_ = self.state[i] * self.matrix[i]
+              dn = 0.0
+              #dn = s * S_rate (i) - d * D_rate(i); # sources dist
+              n_ = np.maximum(p_ * self.total_stock[k] + dn, 0.0)
+
+              # Minimize change of total stock due to round off
+              n_ = (np.round(n_), np.round(np.sum(n_ - np.round(n_))))
+              n_ = n_[0] + n_[1]*(n_[0]==n_[0].min());
+
+              nx.set_node_attributes(self.map, k, \
+                                    dict(zip(self.__market_order__,n_.tolist()[0])))
+              self.total_stock[k] = self.calc_stock(k);
               self.state[i] = n_ / self.total_stock[k]

@@ -72,9 +72,9 @@ if __name__ == '__main__':
 
 	e = economy.Economy(('wood', 'ore'))
 
-	e.add_market('town a', wood = 20)
-	e.add_market('town b', wood = 30)
-	e.add_market('town c', wood = 10)
+	e.add_market('town a', wood = 200)
+	e.add_market('town b', wood = 300)
+	e.add_market('town c', wood = 100)
 
 	e.add_route('town a self', source="town a", destination = "town a", traffic = (0.3,0.8))
 	e.add_route('a-b path', source="town a", destination = "town b", traffic = (0.3,0.1))
