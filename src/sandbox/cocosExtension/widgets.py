@@ -48,7 +48,7 @@ class EconomyInspector(cocos.layer.ColorLayer):
 		self.visible = False
 		self.economy = economy
 		self.map = map
-		self.arrows = []
+		self.arrows = dict()
 		self.updates = dict()
 
 	def on_tile_clicked(self, tile):
@@ -81,9 +81,10 @@ class EconomyInspector(cocos.layer.ColorLayer):
 		find_params = {}
 		markets = self.map.find_cells(market = True)
 		markets = dict((mkt['town_name'], mkt) for mkt in markets)
-		for a in self.arrows:
-			self.map.remove(a)
-		self.arrows = []
+		
+		map(self.map.remove, self.arrows.get(tradeable, []))
+		self.arrows[tradeable] = []
+		
 		if show:
 			for route, source, destination in self.economy.routes():
 				if source == destination:
@@ -91,13 +92,18 @@ class EconomyInspector(cocos.layer.ColorLayer):
 				destination = np.array(markets[destination].center)
 				source = np.array(markets[source].center)
 				displacement = destination-source
+				
 				displacement = displacement/np.linalg.norm(displacement)
 				source = source + 50*displacement
 				destination = source + 100*displacement
-				arrow = Arrow(source.tolist(), destination.tolist() , (255, 255, 255, 200), width=int(50*self.economy.route(route, trade = tradeable)))
+				w = int(50*self.economy.route(route, trade = tradeable))
+				if w == 0:
+					continue
+
+				arrow = Arrow(source.tolist(), destination.tolist() , (255, 255, 255, 200), width=w)
 
 				self.map.add(arrow)
-				self.arrows.append(arrow)
+				self.arrows[tradeable].append(arrow)
 		return True
 
 	def toggle_town_names(self, show):
@@ -132,7 +138,7 @@ class EconomyInspector(cocos.layer.ColorLayer):
 						if any(self.tradeables):
 							tradeables = self.economy.market(self.town['town_name']).items()
 							text = "\n".join("{}: {}".format(t[0], i)  for (t, i) in tradeables if t in self.tradeables)
-							tradeable_info = Label(text, width = 2*self.town.width, anchor_x = "center", anchor_y = "top")
+							tradeable_info = Label(text, width = 2*self.town.width, anchor_x = "center", anchor_y = "top", multiline = True)
 							tradeable_info.position=self.town.midbottom
 							self.map.add(tradeable_info, name = layer_name)
 
@@ -197,9 +203,15 @@ class SidePanel(cocos.layer.ColorLayer):
 	is_event_handler = True
 	def __init__(self,  economy_inspector):
 		tradeables = economy_inspector.get_tradeables()
-		toggles = [Toggle(tradeable, width = 200, on_toggle = lambda state: economy_inspector.toggle_routes(tradeable, state, outgoing = True) ) for tradeable in tradeables]
+		def createRouteToggle(tradeable):
+			return Toggle(tradeable, width = 200, on_toggle = lambda state: economy_inspector.toggle_routes(tradeable, state, outgoing = True) )
+
+		def createInventoryToggle(tradeable):
+			return Toggle(tradeable, width = 200, on_toggle = lambda state: economy_inspector.toggle_town_inventory(tradeable, state))
+
+		toggles = [createRouteToggle(tradeable) for tradeable in tradeables]
 		toggles.append(PanelTitle("Show outgoing for:", width  = 200))
-		toggles.extend(Toggle(tradeable, width = 200, on_toggle = lambda state: economy_inspector.toggle_town_inventory(tradeable, state)) for tradeable in tradeables)
+		toggles.extend(createInventoryToggle(tradeable) for tradeable in tradeables)
 		toggles.append(PanelTitle("Show inventory of:", width  = 200))
 		toggles.append(Toggle("Show town names", width  = 200, on_toggle = lambda state: economy_inspector.toggle_town_names(state)))
 
