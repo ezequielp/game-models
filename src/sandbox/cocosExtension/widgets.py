@@ -50,6 +50,7 @@ class EconomyInspector(cocos.layer.ColorLayer):
 		self.map = map
 		self.arrows = dict()
 		self.updates = dict()
+		self.colors = dict()
 
 	def on_tile_clicked(self, tile):
 		if tile and 'town_name' in tile:
@@ -84,7 +85,7 @@ class EconomyInspector(cocos.layer.ColorLayer):
 		
 		map(self.map.remove, self.arrows.get(tradeable, []))
 		self.arrows[tradeable] = []
-		
+
 		if show:
 			for route, source, destination in self.economy.routes():
 				if source == destination:
@@ -100,7 +101,7 @@ class EconomyInspector(cocos.layer.ColorLayer):
 				if w == 0:
 					continue
 
-				arrow = Arrow(source.tolist(), destination.tolist() , (255, 255, 255, 200), width=w)
+				arrow = Arrow(source.tolist(), destination.tolist() , self.colors.get(tradeable, (255, 255, 255, 200)), width=w)
 
 				self.map.add(arrow)
 				self.arrows[tradeable].append(arrow)
@@ -169,6 +170,9 @@ class EconomyInspector(cocos.layer.ColorLayer):
 	def refresh(self):
 		self.on_exit()
 		self.on_enter()
+
+	def tradeable_color(self, tradeable, color):
+		self.colors[tradeable] = tuple(list(color)+[200])
 
 class Toggle(cocos.layer.ColorLayer):
 	state = False

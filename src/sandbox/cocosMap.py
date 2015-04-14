@@ -72,9 +72,9 @@ if __name__ == '__main__':
 
 	e = economy.Economy(('wood', 'ore'))
 
-	e.add_market('town a', wood = 200)
-	e.add_market('town b', wood = 300)
-	e.add_market('town c', wood = 100)
+	e.add_market('town a', wood = 200, ore = 100)
+	e.add_market('town b', wood = 300, ore = 150)
+	e.add_market('town c', wood = 100, ore = 500)
 
 	e.add_route('town a self', source="town a", destination = "town a", traffic = (0.3,0.8))
 	e.add_route('a-b path', source="town a", destination = "town b", traffic = (0.3,0.1))
@@ -91,12 +91,16 @@ if __name__ == '__main__':
 
 	sbx = Sandbox('map1.xml')
 
+	#Widgets
 	from cocosExtension.widgets import EconomyInspector, SidePanel
 
 	h = EconomyInspector(e, sbx.current_map)
 	sp = SidePanel(h)
 
 	h.position = (0, 50)
+	h.tradeable_color('ore', (255, 0, 0))
+	h.tradeable_color('wood', (0, 0, 255))
+
 	sbx.push_handlers(h)
 
 
