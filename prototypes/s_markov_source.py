@@ -17,6 +17,7 @@
 
 from __future__ import division
 import numpy as np
+from scipy import sparse
 import matplotlib.pyplot as plt
 
 redo = False;
@@ -64,8 +65,6 @@ for i  in range (nT-1):
     n[:,i+1]         = np.maximum(p_ * total_stock[i] + dn, 0);
     total_stock[i+1] = np.sum(n[:,i+1], axis=0);
     p[:,i+1]         = n[:,i+1] / total_stock[i+1];
-#    import pdb
-#    pdb.set_trace()
 
 plt.ion()
 plt.figure(1)
