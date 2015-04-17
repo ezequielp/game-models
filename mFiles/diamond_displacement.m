@@ -16,7 +16,7 @@
 ## Author: Juan Pablo Carbajal <ajuanpi+dev@gmail.com>
 
 ## source: http://www.gameprogrammer.com/fractal.html
-order=6;
+order=4;
 N=2^order+1;
 [x y] = meshgrid (1:N);
 z = rand(N);
@@ -45,37 +45,38 @@ function show (s,d,h,N)
     set(h(ind),'markerfacecolor',[1 0.5 0.5]);
     ind = sub2ind([N,N],d(:,1),d(:,2));
     set(h(ind),'markerfacecolor','k');
-    pause(0.2)
-    set(h(ind),'markerfacecolor',0.8*ones(1,3));
+    pause(0.3)
+    set(h(ind),'markerfacecolor',[0 0.8 0.8]);
   endif
 endfunction
 
 sub = {[1,1 ; N,1 ; 1,N; N,N]};
 
 ## this is only to plot
-flag_plot=false;
+flag_plot=true;
 if flag_plot
-  close all
+  #close all
 
   figure(1)
+  clf
   graphics_toolkit(1,'fltk');
-  set(gcf,'visible','off')
+  #set(gcf,'visible','off')
   hold on
   h = arrayfun (@(i,j)plot(i,j),x(:),y(:));
   set(h,'marker','o','markeredgecolor','k','markersize',12);
   axis tight;
   axis off
-  set(gcf,'visible','on')
+  #set(gcf,'visible','on')
   hold off
 
   show (sub{1},[],h,N)
 
-  figure(2)
-  hm = mesh(x,y,z);
-  set(hm,'edgecolor','k')
-  axis tight;
-  v = axis();
-  axis([v(1:4) -0.5 0.5])
+#  figure(2)
+#  hm = mesh(x,y,z);
+#  set(hm,'edgecolor','k')
+#  axis tight;
+#  v = axis();
+#  axis([v(1:4) -0.5 0.5])
 endif
 
 # some parameters
@@ -104,7 +105,7 @@ for i=1:order
   sub = vertcat(n{:});
   if flag_plot
     cellfun (@(x,y)show(x,y,h,N),sc,d);
-    set(hm,'zdata',z);
+  #  set(hm,'zdata',z);
   endif
 
 endfor
