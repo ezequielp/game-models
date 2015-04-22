@@ -69,46 +69,55 @@ if __name__ == '__main__':
 	sys.path.append('..')
 
 	from economy import economy
+	map_file = 'map1.xml'
 
-	e = economy.Economy(('wood', 'ore'))
+	if map_file == 'map1.xml':
+		e = economy.Economy(('wood', 'ore'))
 
-	e.add_market('town a', wood = 200, ore = 100)
-	e.add_market('town b', wood = 300, ore = 150)
-	e.add_market('town c', wood = 100, ore = 500)
+		e.add_market('town a', wood = 200, ore = 100)
+		e.add_market('town b', wood = 300, ore = 150)
+		e.add_market('town c', wood = 100, ore = 500)
 
-	e.add_route('town a self', source="town a", destination = "town a", traffic = (0.3,0.8))
-	e.add_route('a-b path', source="town a", destination = "town b", traffic = (0.3,0.1))
-	e.add_route('a-c path', source="town a", destination = "town c", traffic = ('rest','rest'))
+		e.add_route('town a self', source="town a", destination = "town a", traffic = (0.3,0.8))
+		e.add_route('a-b path', source="town a", destination = "town b", traffic = (0.3,0.1))
+		e.add_route('a-c path', source="town a", destination = "town c", traffic = ('rest','rest'))
 
-	e.add_route('b-c smuggle', source="town b", destination = "town c", traffic = (0.1,0.0))
-	e.add_route('b-a path', source="town b", destination = "town a", traffic = (0.1,0.9))
-	e.add_route('town b self', source="town b", destination = "town b", traffic = ("rest","rest"))
+		e.add_route('b-c smuggle', source="town b", destination = "town c", traffic = (0.1,0.0))
+		e.add_route('b-a path', source="town b", destination = "town a", traffic = (0.1,0.9))
+		e.add_route('town b self', source="town b", destination = "town b", traffic = ("rest","rest"))
 
-	e.add_route('town c self', source="town c", destination = "town c", traffic = ("rest","rest"))
+		e.add_route('town c self', source="town c", destination = "town c", traffic = ("rest","rest"))
 
+		colors = [('ore', (255, 0, 0)), ('wood', (0,0,255))]
+	elif map_file == 'map2.xml':
+		pass
 
 	cocos.director.director.init(do_not_scale = True)
 
-	sbx = Sandbox('map1.xml')
+	sbx = Sandbox(map_file)
 
 	#Widgets
 	from cocosExtension.widgets import EconomyInspector, SidePanel
+	main_scene = cocos.scene.Scene (sbx)
+	try:
+		h = EconomyInspector(e, sbx.current_map)
+		sp = SidePanel(h)
 
-	h = EconomyInspector(e, sbx.current_map)
-	sp = SidePanel(h)
+		h.position = (0, 50)
+		for tradeable, color in colors:
+			h.tradeable_color(tradeable, color)
+		
+		sbx.push_handlers(h)
+		main_scene.add(h)
+		main_scene.add(sp)
+		def update():
+			e.step()
+			h.update()
+		main_scene.schedule_interval(lambda x: update(), 2)
+	except NameError:
+		pass
 
-	h.position = (0, 50)
-	h.tradeable_color('ore', (255, 0, 0))
-	h.tradeable_color('wood', (0, 0, 255))
 
-	sbx.push_handlers(h)
-
-
-	main_scene = cocos.scene.Scene (sbx, h, sp)
-	def update():
-		e.step()
-		h.update()
-
-	main_scene.schedule_interval(lambda x: update(), 2)
+	
 
 	cocos.director.director.run(main_scene)
