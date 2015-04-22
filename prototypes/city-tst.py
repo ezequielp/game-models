@@ -14,33 +14,29 @@ class CityTestCase(unittest.TestCase):
         for x in NAMES:
             self.cities.append(city.City(x))
 
-    def test_setstock(self):
-        self.cities[0].set_stock(wood=1,stone=10)
-
-    def test_setstats(self):
-        self.cities[0].set_stats(guts=0,greed=10)
-
     def test_set(self):
         self.cities[0].set('stats', guts=0,greed=10)
-        self.cities[0].set('stock', wood=1,stone=10)
+        self.cities[0].set('inventory', wood=1,stone=10)
 
-    def test_stockorder(self):
+    def test_order(self):
         c = self.cities[0]
-        c.set_stock(wood=1,stone=10)
-        idx = c.stock_order()
+        c.set('stock',wood=1,stone=10)
+        idx = c.order('inventory')
+        c.set('stats',guts=0,greed=10)
+        idx = c.order('stats')
 
     def test_asrow (self):
         c = self.cities[0]
-        c.set_stock(wood=1,stone=10)
+        c.set('stock',wood=1,stone=10)
         v = np.matrix(np.zeros([1,2]))
-        for k,i in c.stock_order().items():
+        for k,i in c.order('inventory').items():
             v[0,i] = c.stock[k]
-        self.assertTrue(np.array_equal(c.as_row('stock'),v))
+        self.assertTrue(np.array_equal(c.asrow('inventory'),v))
 
-        c.set_stats(guts=0,greed=10)
+        c.set('stats',guts=0,greed=10)
         v = np.matrix(np.zeros([1,2]))
-        for k,i in c.stats_order().items():
+        for k,i in c.order('stats').items():
             v[0,i] = c.stats[k]
-        self.assertTrue(np.array_equal(c.as_row('stats'),v))
+        self.assertTrue(np.array_equal(c.asrow('stats'),v))
 
 # vim: set expandtab tabstop=4 :
