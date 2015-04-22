@@ -70,7 +70,7 @@ class Economy():
             ret = ret[stat]
         return ret
 
-    def get_all (self, field, item = None):
+    def get_all_city (self, field, item = None):
         if not field in self.__city_fields__:
             raise KeyError(field)
         if item:
@@ -107,6 +107,7 @@ class Economy():
 
         self.__city_order__ = self.city_order().keys()
 
+        ### TRADE ###
         self.matrix = []
         self.state  = []
         m = self.map
@@ -124,6 +125,7 @@ class Economy():
                 P = P / self.total_stock[k]
 
             self.state.append(P)
+        ### TRADE ###
 
 #    def step(self):
 #      if not nx.is_frozen(self.map):
