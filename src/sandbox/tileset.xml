@@ -14,5 +14,8 @@
 		<tile id="water">
 			<image file="assets/coast-tile.png"></image>
 		</tile>
+		<tile id="arena">
+			<image file="assets/arena.png"></image>
+		</tile>
 	</tileset>
 </resource>

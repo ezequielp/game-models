@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<resource>
+	<requires file="tileset.xml" namespace="tls"/>
+	<regularhexmap id="level1" tile_height="72">
+		{xml}
+	</regularhexmap>
+</resource>
