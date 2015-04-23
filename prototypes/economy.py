@@ -55,7 +55,7 @@ class Economy():
         return dict([(k,i) for i,k in enumerate(self.map.nodes_iter())])
 
     def inventory (self, name, stuff = None):
-        ret = self.map.node[name]['inventory']
+        ret = {x:self.map.node[name][x] for x in self.map.node[name]['inventory']}
         if stuff:
             ret = ret[stuff]
         return ret
@@ -145,11 +145,14 @@ class Economy():
 
     def calc_stock(self, stuff=None):
         if stuff:
-            return sum (x[1]['inventory'][stuff] for x in self.map.nodes_iter(data=True))
+            if not stuff in self.__stock_order__:
+                raise KeyError('Good {} not in stocks.'.format(stuff))
+            else:
+                return sum (x[1][stuff] for x in self.map.nodes_iter(data=True))
         else:
             m = dict()
             for k in self.__stock_order__:
-                m[k] = sum (x[1]['inventory'][k] for x in self.map.nodes_iter(data=True))
+                m[k] = sum (x[1][k] for x in self.map.nodes_iter(data=True))
             return m
 
     def plot_graph(self, stuff):

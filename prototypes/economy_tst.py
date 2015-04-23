@@ -24,16 +24,15 @@ class EconomyTestCase(unittest.TestCase):
             c['stats'] = {'greed':np.random.randint(0,10),'guts':np.random.randint(0,10)}
             self.cities.append(c)
 
-    def test_addcity(self):
         for c in self.cities:
             self.economy.add_city(c)
-        import pdb
-        pdb.set_trace()
 
     def test_contains(self):
         self.assertTrue(NAMES[0] in self.economy)
 
     def test_inventory(self):
+#        import pdb
+#        pdb.set_trace()
         for i,c in enumerate(NAMES):
           self.assertEqual(self.amount[0](i), self.economy.inventory(c, "wood"))
           self.assertEqual(self.amount[1](i), self.economy.inventory(c, "stone"))
