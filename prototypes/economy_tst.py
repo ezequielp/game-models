@@ -14,12 +14,19 @@ class EconomyTestCase(unittest.TestCase):
         self.tradeables = ('wood','stone')
         self.economy = economy.Economy(tradeables = self.tradeables)
         self.amount = (lambda i: 20*i, lambda i: 2*i+1)
+        self.cities = []
         for i,n in enumerate(NAMES):
+            c = dict()
+            c['name'] = n
             v = dict(zip (self.tradeables,[s(i) for s in self.amount]))
-            c = city.City(n)
-            c.set('inventory',**v)
-            self.economy.add_city(c)
+            c['inventory'] = v
+            c['pos'] = np.random.rand(1,2)
+            c['stats'] = {'greed':np.random.randint(0,10),'guts':np.random.randint(0,10)}
+            self.cities.append(c)
 
+    def test_addcity(self):
+        for c in self.cities:
+            self.economy.add_city(c)
         import pdb
         pdb.set_trace()
 
