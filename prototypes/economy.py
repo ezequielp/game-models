@@ -100,7 +100,7 @@ class Economy():
         m = dict(**city['inventory'])
         m.update(city['stats'])
 
-        self.map.add_node(city['name'], m,\
+        self.map.add_node(city['name'], attr_dict=m,\
                                         inventory=city['inventory'].keys(),\
                                         stats=city['stats'].keys(),\
                                         pos=city['pos'])
@@ -121,16 +121,19 @@ class Economy():
            route['to'] not in self.city_names():
             raise NameError('City {} or {} not in economy.'.format(route['from'],route['to']))
 
-        m = OrderedDict().fromkeys(self.__stock_order__)
+        for k in route['traffic'].keys():
+            if k not in self.__stock_order__:
+                raise KeyError('Tradeable {} undefined.'.format(k))
+
         for k in self.__stock_order__:
             if k not in route['traffic'].keys():
-                raise KeyError('Traffic for {} missing.'.format(k))
-            m[k] = route['traffic'][k]
+                route['traffic'][k] = 0
+
         ## Ideally the traffic would be stored in a dict in the attribute
         # 'traffic'. But then nx.attr_matrix (in __assemble__) needs ot be
         # re-implemented, ergo TODO
-        self.map.add_edge(route['from'], route['to'], m, name=route['name'],\
-                                                   traffic=m.keys(),\
+        self.map.add_edge(route['from'], route['to'], attr_dict=route['traffic'], name=route['name'],\
+                                                   traffic=route['traffic'].keys(),\
                                                    danger=route['danger'],\
                                                    length=route['length'])
 
@@ -178,24 +181,25 @@ class Economy():
         for k in self.__stock_order__:
             # This produces a left stochastic matrix
             A = nx.attr_matrix(self.map, edge_attr=k, rc_order=self.__city_order__)
-            if not all(x == 1 for x in np.sum(A,axis=1)):
+            if not all(np.abs(x - 1.0)<=np.sqrt(np.spacing(1)) for x in np.sum(A,axis=1)):
+                print np.sum(A,axis=1)
                 raise ValueError('Route traffics are not normalized')
             self.TRADE_matrix.append(A)
 
             P = np.matrix([0]*len(self.__city_order__))
             if self.total_stock[k] > 0:
                 for j,n in enumerate(self.__city_order__):
-                    P[0,j] = m.node[n]['inventory'][k]
+                    P[0,j] = m.node[n][k]
                 P = P / self.total_stock[k]
 
-            self.TRADe_state.append(P)
+            self.TRADE_state.append(P)
         ### TRADE ###
 
     def step(self):
         if not nx.is_frozen(self.map):
-            self.__assemble_chain__()
+            self.__assemble__()
 
-        for i,k in enumerate(self.__strock_order__):
+        for i,k in enumerate(self.__stock_order__):
             if self.total_stock[k] > 0:
                 p_ = self.TRADE_state[i] * self.TRADE_matrix[i]
                 dn = 0.0
@@ -217,26 +221,30 @@ class Economy():
         for c in Trade:
             # get city mixing vector
             city_stats = Trade.node[c]['stats']
-            A   = np.matrix ([Trade.node[c][k] for k in city_stats]+[[-1]])
+            A   = np.matrix ([Trade.node[c][k] for k in city_stats]+[-1]).T
 
             tmp = np.zeros([len(self.__stock_order__),1])
             # loop over neighbors of current city
             for n in Trade[c]:
-                p  = Trade[c][n]['danger']
-                l  = Trade[c][n]['length']
-                # Stock difference
+                # FIXME: Multidigraph!
+                d  = Trade[c][n][0]['danger']
+                l  = Trade[c][n][0]['length']
                 for i,t in enumerate(self.__stock_order__):
-                    dx = (Trade.node[n][t] - Trade.node[c][t]) / self.total_stock[i]
+                    # Stock difference
+                    dx = (Trade.node[n][t] - Trade.node[c][t]) / self.total_stock[t]
                     # Potential gain TODO
                     #dv = (Trade.node[n]['stock'][1] - Trade.node[c]['stock'][1])/total_value
-                    W  = np.matrix([dx,dv,p,l])
+                    #W  = np.matrix([dx,dv,d,l])
+
+                    # FIXME order of city stats!
+                    W  = np.matrix([dx,d,l])
                     V  = W * A
-                    Trade[c][n][t] = np.exp (V)
-                    tmp[i] = tmp[i] + Trade[c][n][t]
+                    Trade[c][n][0][t] = np.exp (V)
+                    tmp[i] = tmp[i] + Trade[c][n][0][t]
 
             # Normalize with softmax
             for n in Trade[c]:
                 for i,t in enumerate(self.__stock_order__):
-                    Trade[c][n][t] = Trade[c][n][t] / tmp[i]
+                    Trade[c][n][0][t] = Trade[c][n][0][t] / tmp[i]
 
 # vim: set expandtab tabstop=4 :
