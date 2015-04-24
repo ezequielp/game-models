@@ -32,10 +32,16 @@ from utils import *
 def dict2matrix (d):
     return np.matrix (d.values()), d.keys()
 
+def is_within_eps (value):
+    return np.abs(value) <= np.sqrt(np.spacing(1))
+
 class Economy():
     def __init__(self, tradeables):
         self.__city_fields__  = ('name','inventory','stats', 'pos')
-        self.__route_fields__ = ('from','to','name','traffic','length','danger')
+        self.__route_fields__ = ('ini','end','name','traffic','length','danger')
+
+        # contains the good for which export is already fully defined
+        self.__export_complete__ = dict()
 
         self.map         = nx.MultiDiGraph()
 
@@ -78,7 +84,14 @@ class Economy():
     def city_names(self):
         return self.map.nodes_iter()
 
-    def add_city(self, city):
+    def add_city(self, city_dict=None, **attr):
+        if city_dict:
+            ## AS DICTIONARY
+            city = city_dict.copy()
+            city.update(attr)
+        else:
+            city = dict(attr)
+
         # Validate data
         for k in city.keys():
             if not k in self.__city_fields__:
@@ -105,11 +118,38 @@ class Economy():
                                         stats=city['stats'].keys(),\
                                         pos=city['pos'])
 
+    def city_export(self, name=None, stuff=None):
+        # FIXME multigraph!
+        ret = dict()
+        if name and stuff:
+            for n in self.map[name]:
+                ret[n] = self.map[name][n][0][stuff]
+        elif name and not stuff:
+            for n in self.map[name]:
+                neigh = self.map[name][n][0]
+                ret[n] = {k:v for (k,v) in neigh.iteritems() if k in neigh['traffic']}
+        elif not name and stuff:
+            for c in self.map.nodes_iter():
+                ret[c] = self.city_export(c, stuff)
+        else:
+            for c in self.map.nodes_iter():
+                ret[c] = {s:self.city_export(c,s) for s in self.__stock_order__}
+        return ret
+
+    def is_city_export_ok(self,name,stuff):
+        return is_within_eps(1.0-np.sum(self.city_export(name,stuff).values()))
     #### END CITIES ####
 
     #### ROUTES ####
-    def add_route(self, route):
-        # Validate data
+    def add_route(self, route_dict=None, **attr):
+        if route_dict:
+            ## AS DICTIONARY
+            route = route_dict.copy()
+            route.update(attr)
+        else:
+            route = dict(attr)
+
+        ### Validate data
         for k in route.keys():
             if not k in self.__route_fields__:
                 raise KeyError(k)
@@ -117,28 +157,51 @@ class Economy():
         if route['name'] in self.route_names():
             raise NameError('Route {} already exists.'.format(route['name']))
 
-        if route['from'] not in self.city_names() or \
-           route['to'] not in self.city_names():
-            raise NameError('City {} or {} not in economy.'.format(route['from'],route['to']))
+        if route['ini'] not in self.city_names() or \
+           route['end'] not in self.city_names():
+            raise NameError('City {} or {} not in economy.'.format(route['ini'],route['end']))
 
         for k in route['traffic'].keys():
             if k not in self.__stock_order__:
                 raise KeyError('Tradeable {} undefined.'.format(k))
 
+        # First route out of this city
+        if not self.map.out_edges(route['ini']):
+            self.__export_complete__[route['ini']] = set()
+        else:
+            for k in route['traffic'].keys():
+                if k in self.__export_complete__[route['ini']]:
+                    raise ValueError(\
+         'Export of {} out of city {} is already fully defined.'.format(k,route['ini']))
+
+        # Goods not give are not traded over the route
         for k in self.__stock_order__:
             if k not in route['traffic'].keys():
                 route['traffic'][k] = 0
 
+        # If an entry on traffic is 'rest', it is replaced by
+        # the corresponding value and the export completed
+        if 'rest' in route['traffic'].values():
+            for k,v in route['traffic'].items():
+                if v == 'rest':
+                    self.__export_complete__[route['ini']].add(k)
+                    r = np.sum(x for e,x in nx.get_edge_attributes(self.map,k).items() \
+                                    if e[0] == route['ini'])
+                    route['traffic'][k] = 1.0 - r
+
         ## Ideally the traffic would be stored in a dict in the attribute
         # 'traffic'. But then nx.attr_matrix (in __assemble__) needs ot be
         # re-implemented, ergo TODO
-        self.map.add_edge(route['from'], route['to'], attr_dict=route['traffic'], name=route['name'],\
-                                                   traffic=route['traffic'].keys(),\
-                                                   danger=route['danger'],\
-                                                   length=route['length'])
+        self.map.add_edge(route['ini'], route['end'],\
+                                        attr_dict=route['traffic'],\
+                                        name=route['name'],\
+                                        traffic=route['traffic'].keys(),\
+                                        danger=route['danger'],\
+                                        length=route['length'])
 
     def route_names(self):
         return (n[2]['name'] for n in self.map.edges_iter(data=True))
+
     #### END ROUTES ####
 
     #### OTHER ####
@@ -181,7 +244,7 @@ class Economy():
         for k in self.__stock_order__:
             # This produces a left stochastic matrix
             A = nx.attr_matrix(self.map, edge_attr=k, rc_order=self.__city_order__)
-            if not all(np.abs(x - 1.0)<=np.sqrt(np.spacing(1)) for x in np.sum(A,axis=1)):
+            if not all(is_within_eps(1.0-x) for x in np.sum(A,axis=1)):
                 print np.sum(A,axis=1)
                 raise ValueError('Route traffics are not normalized')
             self.TRADE_matrix.append(A)

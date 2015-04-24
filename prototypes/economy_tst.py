@@ -18,6 +18,8 @@ class EconomyTestCase(unittest.TestCase):
         G     = nx.DiGraph(nx.barabasi_albert_graph(len(NAMES), 2, seed))
         for e in G.edges_iter():
             G.add_edge(e[1],e[0])
+        for n in G.nodes_iter():
+            G.add_edge(n,n)
 
         labels= {n:v for n,v in zip(G.nodes(),NAMES)}
         pos   = nx.spring_layout(G)
@@ -52,12 +54,12 @@ class EconomyTestCase(unittest.TestCase):
 
         for i,e in enumerate(G.edges_iter()):
             r = dict()
-            r['from'] = labels[e[0]]
-            r['to'] = labels[e[1]]
-            r['name'] = '->'.join([r['from'],r['to']])
+            r['ini'] = labels[e[0]]
+            r['end'] = labels[e[1]]
+            r['name'] = '->'.join([r['ini'],r['end']])
             r['traffic'] = dict(zip(self.economy.__stock_order__,traffic[i,:]))
-            ini = self.economy.map.node[r['from']]
-            end = self.economy.map.node[r['to']]
+            ini = self.economy.map.node[r['ini']]
+            end = self.economy.map.node[r['end']]
             r['length'] = np.sum((end['pos']-ini['pos'])**2)
             r['danger'] = danger[i]
             self.economy.add_route(r)
@@ -94,5 +96,35 @@ class EconomyTestCase(unittest.TestCase):
 
     def test_updatetrade(self):
         self.economy.update_trade()
+
+    def test_cityexport(self):
+        self.economy.city_export(NAMES[0],self.tradeables[0])
+        self.economy.city_export(NAMES[0])
+        self.economy.city_export(stuff=self.tradeables[0])
+        self.economy.city_export()
+
+    def test_cityexportok(self):
+        for c in self.economy.city_names():
+            for s in self.economy.total_stock.keys():
+                self.assertTrue(self.economy.is_city_export_ok(c,s))
+
+    def test_addroute_fail(self):
+        city = 'test'
+        v = dict(zip (self.tradeables,[s(0) for s in self.amount]))
+        self.economy.add_city(name=city,\
+                              inventory=v,\
+                              pos=[0,0],\
+                              stats={'altruism':0,'guts':0})
+        self.economy.add_route(name='ok', ini=city,\
+                                          end=city,\
+                                          traffic={'wood':'rest','stone':'rest'},\
+                                          length=1,\
+                                          danger=1)
+        with self.assertRaises(ValueError):
+            self.economy.add_route(name='wrong', ini=city,\
+                                          end=city,\
+                                          traffic={'wood':'rest','stone':'rest'},\
+                                          length=1,\
+                                          danger=1)
 
 # vim: set expandtab tabstop=4 :
