@@ -2,90 +2,135 @@
 Autor: Lautaro Linquiman
 Web: www.tutorialdeprogramacion.com 
 Email: acc.limayyo@gmail.com
+Version: 0.2
 '''
-from PIL import Image
+from __future__ import division
+from sys import exit
+from colorsys import rgb_to_hls
+
+try:
+	from PIL import Image
+except ImportError:
+	print 'Tienes que instalar la libreria PIL'
+	print 'pip install PIL o en http://www.pythonware.com/products/pil/'
+	exit()
+
+def rgbToHls(rgb):
+	''' Tranforma los valores de rgb_to_hls a grados enteros'''
+	r,g,b = rgb[0:3]
+	h,l,s = rgb_to_hls(r/255,g/255,b/255)
+	listReturn = (round(h*360), round(l*100), round(s*100))
+	return listReturn
+
 class creatorMap():
 	def __init__(self, srcImage, params = {}):
 		'''
 		srcImage: ruta de la imagen (.png)
 		params{
-			createHTML:0/1,
-			srcDestino:(string) type xml,
-			srcTemplateMap: (string) type xml
+			createHTML:{default 0}/1 Crea un archivo html con la configuracion del mapa
+			createLog:0/{default 1} Crea un log con la informacion de cada px
+			srcDestino:(string) archivo de destino del mapa {default map}
+			srcTemplateMap: (string) template para generar el mapa, es necesario que tenga el atributo {xml} {default template.xml}
+			
 		}'''
 		self.__secImage = srcImage
-		self.__srcDestino = 'map.xml'
+		self.__srcDestino = 'map'
 		self.__srcTemplateMap = 'template.xml'
 		self.__createHTML = 0
-		
+		self.__createLog = 1
+		self.fileContent = ""
+		self.pixelCount = 0
 		self.__xmlContent = []
 
 		if('createHTML' in params):
-			self.__createHTML = paramas['createHTML']			
+			self.__createHTML = params['createHTML']			
 		if('srcDestino' in params):
-			self.__srcDestino = paramas['srcDestino']
+			self.__srcDestino = params['srcDestino']
 		if('srcTemplateMap' in params):
-			self.__srcTemplateMap = paramas['srcTemplateMap'] 
-		
+			self.__srcTemplateMap = params['srcTemplateMap'] 
+		if('createLog' in params):
+			self.__createLog = params['createLog']
 		self.image = Image.open(srcImage)		
-		
+		self.imgSize = self.image.size[0]
 
 	def start(self):
 		for rgba in self.image.getdata():
-			self.__xmlContent.append((self.__getTileNameByrgba(rgba), rgba))
+			self.__xmlContent.append((self.__getTileNameByrgba(rgba),))
 		self.__createXML()
+		if(self.__createLog):
+			print 'creando log'.center(50,'-')
+			f=open('log.txt','wb')
+			f.write(self.fileContent)
+			f.close()
+			print 'log creado'.center(50,'-')
 		if(self.__createHTML):
 			self.__renderMapToHTML()
 
 	def __createXML(self):
+		print 'creando mapa...'.center(50,'-')
 		xmlString = ''
 		count = 0		
 		templateStr = "\t\t\t\t<cell tile=\"tls:%s\" />\n"
-		finalCount = self.image.size[0]*self.image.size[0]
+		finalCount = self.imgSize*self.imgSize
 		for element in self.__xmlContent:
-			if((count%self.image.size[0] == 0 and not count == 0 ) or (count-1 == finalCount)):
+			if((count%self.imgSize == 0 and not count == 0 ) 
+				or (count == finalCount)):
 				xmlString += "\t\t\t</column>\n"
-			if(count == 0 or count%self.image.size[0] == 0):
+			if(count == 0 or count%self.imgSize == 0):
 				xmlString += "\t\t\t<column>\n"
 			xmlString += templateStr % element[0]			
 			count += 1
 		xmlString += "\t\t\t</column>\n"
 		template = open(self.__srcTemplateMap, 'r')
 		contentTemplateStructure = template.read()
-		template.close()
-		
+		template.close()		
 		parseStructure = contentTemplateStructure.replace('{xml}', xmlString)
-
-		byTemplate = open(self.__srcDestino, 'wb')
+		byTemplate = open(self.__srcDestino+'.xml', 'wb')
 		byTemplate.write(parseStructure)
-		byTemplate.close()
+		byTemplate.close()		
+		print ('%s creado correctamente' % (self.__srcDestino+'.xml')).center(50,'-')
+		
 
 	def __renderMapToHTML(self):
-		pass
-
+		print 'creando mapa html'.center(50,'-')
+		html = ""
+		templateDivHtml = "<div style='background-color:%s; width:10px; height:10px;float:left' title='%d %s'></div>"
+		count = 0
+		for tile in self.__xmlContent:
+			count += 1
+			tileUtil = tile[0]
+			color = ''
+			if tileUtil == 'arena':
+				color = 'red'
+			elif tileUtil == 'grass':
+				color = 'green'
+			elif tileUtil == 'water':
+				color = 'blue'
+			html += templateDivHtml % (color,count,tile)
+			if count%self.imgSize == 0:
+				html += "<div style='clear:both'></div>"
+				
+		htmlFile = open(self.__srcDestino+'.html', 'wb')
+		htmlFile.write(html)
+		htmlFile.close()
+		print ('%s creado correctamente' % (self.__srcDestino+'.html')).center(50,'-')
+		
 	def __getTileNameByrgba(self, rgba):
-		''' Compara las distintas posiblidades de rgbaes para obtener el tile '''
-		if(rgba[0] >= 130 and rgba[0] <= 190 and (rgba[1] <= 100 and rgba[1] > 60) and (rgba[2] <= 100 and rgba[2] > 60)):
-			return 'town' #'rojoCasita'
-		elif((rgba[0] > 100 and rgba[1] < 150) and rgba[0] == rgba[1] and (rgba[2] < 88)):
-			return  'grass'	#verde
-		elif((rgba[0] >= 60 and rgba[0] <= 130) and rgba[0] == rgba[1] and (rgba[2] >= 88 and rgba[2] <= 150)):
-			return  'grass'	#verde
-		elif(rgba[0] > rgba[1]):
-			if(rgba[2] > rgba[0]):
-				return  'water' #azul
-			if(rgba[1] >= rgba[2] or rgba[1] <= rgba[2]):
-				return  'arena' #rojo
-		elif(rgba[1] > rgba[0]):
-			if(rgba[2] > rgba[1]):
-				return  'water' #azul
-			elif(rgba[1] >= rgba[0] or rgba[1] <= rgba[0]):		
-				return  'grass'	#verde
-		elif(rgba[2] > rgba[1]):
-			if(rgba[0] > rgba[2]):
-				return  'arena' #rojo
-			elif(rgba[1] >= rgba[0] or rgba[1] <= rgba[0]):
-				return  'water' #azul
+		#'''Compara los distintos valores hls para obtener el tile'''
+		hlsColor = rgbToHls(rgba)
+		hlsUtilColor = hlsColor[0]
+		if(self.__createLog):
+			self.pixelCount += 1
+			self.fileContent += "Pixel %d value %d %d %d \n" % (self.pixelCount, hlsColor[0], hlsColor[1], hlsColor[2])
+		if(hlsUtilColor < 120):
+			#Color rojo
+			return 'arena'
+		elif(hlsUtilColor >= 120 and 150 > hlsUtilColor):
+			#color verde
+			return 'grass'
+		elif(hlsUtilColor >= 150):
+			#color azul
+			return 'water'		
 
-createMap = creatorMap('scenario1.png')
+createMap = creatorMap('scenario1.png',{'createHTML': 1, 'srcDestino': 'map2'})
 createMap.start()
