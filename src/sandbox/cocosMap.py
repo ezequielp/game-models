@@ -46,18 +46,19 @@ class Sandbox(cocos.layer.ColorLayer, pyglet.event.EventDispatcher):
 
 		#level1.set_view(0, 0, level1.px_width, level1.px_height)
 		self.current_map = level1
+		self.clicked = False
 
 	def get_tile_at_virtual_coord(self, x, y):
-		return self.current_map.get_at_pixel(*self.manager.pixel_from_screen(*cocos.director.director.get_virtual_coordinates(x, y)))
+		return self.current_map.get_at_pixel(*self.manager.pixel_from_screen(x, y))
 
 	def on_mouse_press(self, x, y, buttons, modifiers):
 		if buttons & pyglet.window.mouse.LEFT:
 			self.clicked = self.get_tile_at_virtual_coord(x, y)
 
 	def on_mouse_release(self, x, y, buttons, modifiers):
-		if buttons & pyglet.window.mouse.LEFT & (self.clicked == self.get_tile_at_virtual_coord(x, y)):
+		if buttons & pyglet.window.mouse.LEFT and self.clicked and (self.clicked == self.get_tile_at_virtual_coord(x, y)):
 			clicked, self.clicked = self.clicked, None
-			self.dispatch_event('on_tile_clicked', clicked)
+			return self.dispatch_event('on_tile_clicked', clicked) 
 
 
 
@@ -92,7 +93,7 @@ if __name__ == '__main__':
 	elif map_file == 'map2.xml':
 		pass
 
-	cocos.director.director.init(do_not_scale = True)
+	cocos.director.director.init(do_not_scale = True, resizable = True)
 
 	sbx = Sandbox(map_file)
 
@@ -108,8 +109,8 @@ if __name__ == '__main__':
 			h.tradeable_color(tradeable, color)
 		
 		sbx.push_handlers(h)
-		main_scene.add(h)
-		main_scene.add(sp)
+		sbx.add(h)
+		sbx.add(sp)
 		def update():
 			e.step()
 			h.update()
@@ -119,5 +120,5 @@ if __name__ == '__main__':
 
 
 	
-
+	cocos.director.director.economy = e
 	cocos.director.director.run(main_scene)

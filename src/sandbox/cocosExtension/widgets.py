@@ -2,8 +2,9 @@ from cocos.text import Label
 import cocos.draw
 import numpy as np
 import pyglet
-
+from cocos.layer import Layer 
 from math import cos, sin, radians, atan2
+
 def rotationMatrix(angle):
 	angle = radians(angle)
 	return np.array([[cos(angle), -sin(angle)], [sin(angle), cos(angle)]])
@@ -40,11 +41,78 @@ class Arrow(cocos.draw.Canvas):
 		
 		
 
+
+class SimpleWindow(Layer):
+	is_event_handler = True
+	def __init__(self, r, g, b, a, window_name = "Simple Window", width=None, height=None):
+		super(SimpleWindow, self).__init__()
+
+		self.widget_bar = widget_bar = WidgetBar(r, g, b, 255, window_name, width = width)
+		self.contents = contents = cocos.layer.ColorLayer(r, g, b, a, width = width, height = height)
+		contents.position = (0, 0)
+		widget_bar.position = (0, height)
+
+		super(SimpleWindow, self).add(contents, name = "contents")
+		super(SimpleWindow, self).add(widget_bar, name = "widget_bar")
+		self.moving = False
 		
 
-class EconomyInspector(cocos.layer.ColorLayer):
+	def add(self, child, z=0, name=None ):
+		self.contents.add(child, z, name)
+		return self
+
+	def get( self, name ):
+		return self.contents.get(name)
+
+
+	def remove(self, child):
+		self.contents.remove(child)
+
+	@property
+	def width(self):
+		return self.contents.width
+
+	@width.setter
+	def width(self, value):
+		self.contents.width = value
+		self.widget_bar.width = value
+
+	@property
+	def height(self):
+		return self.contents.height + self.widget_bar.height
+
+	@height.setter
+	def height(self, value):
+		value = max(self.widget_bar.height, value)
+		self.contents.height = value
+		self.widget_bar.position = (0, value)
+
+	def on_mouse_press(self, x, y, buttons, modifiers):
+		if self.widget_bar.y +self.y < y and y< self.y + self.widget_bar.y +self.widget_bar.height:
+			self.moving = True
+			return True
+
+	def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+		if self.moving:
+			self.x = self.x+dx
+			self.y = self.y+dy
+			return True
+
+	def on_mouse_release(self, x, y, buttons, modifiers):
+		if self.moving:
+			self.moving = False
+			return True
+
+
+	def refresh(self):
+		self.contents.on_exit()
+		self.contents.on_enter()
+		self.widget_bar.refresh()
+
+
+class EconomyInspector(SimpleWindow):
 	def __init__(self, economy, map):
-		super(EconomyInspector, self).__init__(20, 20, 20, 128, width = 100, height = 100)
+		super(EconomyInspector, self).__init__(20, 20, 20, 128, width = 100, height = 100, window_name = "Economy Inspector")
 		self.visible = False
 		self.economy = economy
 		self.map = map
@@ -56,13 +124,11 @@ class EconomyInspector(cocos.layer.ColorLayer):
 		if tile and 'town_name' in tile:
 			if tile['town_name'] in self.economy:
 				from economy.market import Market
-
 				market = Market((3, int(self.economy.market(tile['town_name'], "wood"))), "seed")
-
 				inv = "\n".join("{} has {} wood".format(*x) for x in market.inventory().items()) 
-				
 				text = Label("{}\n{}".format(tile['town_name'], inv), anchor_y = "bottom", multiline = True, width=600)
 				text.position = (10, 10)
+
 				self.width = text.element.content_width+20
 				self.height = text.element.content_height+20
 				self.refresh()
@@ -70,7 +136,6 @@ class EconomyInspector(cocos.layer.ColorLayer):
 				try:
 					self.remove("text")
 				except Exception, e:
-					print(e)
 					pass
 				self.add(text, name = "text")
 				self.visible = True
@@ -167,9 +232,6 @@ class EconomyInspector(cocos.layer.ColorLayer):
 		for update in self.updates.values():
 			update()
 
-	def refresh(self):
-		self.on_exit()
-		self.on_enter()
 
 	def tradeable_color(self, tradeable, color):
 		self.colors[tradeable] = tuple(list(color)+[200])
@@ -185,8 +247,10 @@ class Toggle(cocos.layer.ColorLayer):
 		self.label = Label(label, multiline = False, width = width, anchor_x = 'center', anchor_y = 'center')
 		self.label.position = self.width/2, self.label.element.content_height/2
 		self.add(self.label)
+		self.height = self.label.element.content_height
 
 	def refresh(self):
+		self.label.position = self.width/2, self.label.element.content_height/2
 		self.on_exit()
 		self.on_enter()
 
@@ -198,13 +262,17 @@ class Toggle(cocos.layer.ColorLayer):
 			self.refresh()
 
 class PanelTitle(Toggle):
-	def __init__(self, label, width = None):
-		self.colors = {False: (100, 0, 100, 128)}
+	def __init__(self, label, width = None, color = (100, 0, 100, 128)):
+		self.colors = {False: color}
 		super(PanelTitle, self).__init__(label, width  = width, on_toggle = lambda state: False)
 		
+class WidgetBar(PanelTitle):
+	def __init__(self, r, g, b, a, label, width=None):
+		super(WidgetBar, self).__init__(label, width = width, color = (r, g, b, a))
+		
 
-class SidePanel(cocos.layer.ColorLayer):
-	is_event_handler = True
+	
+class SidePanel(SimpleWindow):
 	def __init__(self,  economy_inspector):
 		tradeables = economy_inspector.get_tradeables()
 		def createRouteToggle(tradeable):
@@ -221,7 +289,7 @@ class SidePanel(cocos.layer.ColorLayer):
 
 		height =  max(t.label.element.content_height for t in toggles)
 		
-		super(SidePanel, self).__init__(20, 20, 20, 128, width = 200, height = len(toggles)*height)
+		super(SidePanel, self).__init__(20, 20, 20, 128, width = 200, height = len(toggles)*height, window_name = "Display options")
 		
 		self.position = (cocos.director.director.window.width-200, 100)
 		self.visible = True
@@ -233,11 +301,15 @@ class SidePanel(cocos.layer.ColorLayer):
 			toggles[i].height = height
 			self.add(toggles[i])
 
+
 	def on_mouse_release(self, x, y, buttons, modifiers):
+		ret = super(SidePanel, self).on_mouse_release(x, y, buttons, modifiers)
 		if buttons & pyglet.window.mouse.LEFT:
-			toggle = self.hit_widget(*cocos.director.director.get_virtual_coordinates(x, y))
+			toggle = self.hit_widget(x,y)
 			if toggle is not None:
 				toggle.switch()
+				return True
+		return ret
 				
 
 	def hit_widget(self, x, y):
@@ -248,11 +320,10 @@ class SidePanel(cocos.layer.ColorLayer):
 			return None
 
 		i = int(y-w_y)//self.toggle_height
+		if i < len(self.toggles):
+			return self.toggles[i]
+		else:
+			return None
 
-		return self.toggles[i]
 
-
-	def refresh(self):
-		self.on_exit()
-		self.on_enter()
 
