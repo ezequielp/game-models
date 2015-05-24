@@ -55,6 +55,7 @@ class SimpleWindow(Layer):
 		super(SimpleWindow, self).add(contents, name = "contents")
 		super(SimpleWindow, self).add(widget_bar, name = "widget_bar")
 		self.moving = False
+
 		
 
 	def add(self, child, z=0, name=None ):
@@ -91,6 +92,8 @@ class SimpleWindow(Layer):
 		if self.widget_bar.y +self.y < y and y< self.y + self.widget_bar.y +self.widget_bar.height:
 			self.moving = True
 			return True
+		else:
+			self.moving = False
 
 	def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
 		if self.moving:
