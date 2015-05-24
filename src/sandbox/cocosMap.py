@@ -60,7 +60,11 @@ class Sandbox(cocos.layer.ColorLayer, pyglet.event.EventDispatcher):
 			clicked, self.clicked = self.clicked, None
 			return self.dispatch_event('on_tile_clicked', clicked) 
 
-
+	def on_resize(self, width, height):
+		if width > self.width or height > self.height:
+			self.width, self.height = width, height
+			self.on_exit()
+			self.on_enter()
 
 
 Sandbox.register_event_type('on_tile_clicked')
