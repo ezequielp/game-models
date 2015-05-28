@@ -1,0 +1,98 @@
+terrain: scenario1.png
+
+cities: 
+    - name: Tatun
+      position: (1,2)
+      structures: [Lake, Wood, Beach, Grassland, Sheep shed, Dog kennel]
+
+    - name: Wolfila
+      position: (2,3)
+      structures: [Quary, Woods, Grassland, Dog kennel]
+
+    - name: Tumunzah
+      position: (,)
+      structures: [Lake, Grassland, Beach]
+
+    - name: Bardithorp
+      position: (,)
+      structures: [Dam, Grassland, Sheep shed]
+
+    - name: Pafeld
+      position: (,)
+      structures: [River, Grassland]
+
+    - name: Gondone
+      position: (,)
+      structures: [Quary]
+
+    - name: Heamoor
+      position: (,)
+      structures: [Grassland, Sheep shed, Cow shed]
+
+    - name: Caystone
+      position: (,)
+      structures: [Quary, Dog kennel]
+
+    - name: Sasela
+      position: (,)
+      structures: [Grassland, River]
+
+    - name: Sago
+      position: (,)
+      structures: [Quary]
+
+
+economy: 
+    tradeables: 
+        [wood, stone, sand, fish, milk, weat, chaff, cows, sheeps, dogs]
+
+    routes: 
+        - from: Tatun 
+          to: Tatun
+          materials: {wood: 0.5,  stone: 1.0, sand: 0.5, fish: 0.4, milk: 0.6, weat: 0.6, chaff: 0.8, cows: 1, sheeps: 0.8, dogs: 0.5}
+
+        - from: Tatun
+          to: Bardithorp
+          materials: {wood: 0.1,  stone: 0.0, sand: 0.5, fish: 0.0, milk: 0.0, weat: 0.0, chaff: 0.0, cows: 0, sheeps: 0.0, dogs: 0.4}
+
+        - from: Tatun
+          to: Cystone
+          materials: {wood: 0.4,  stone: 0.0, sand: 0.0, fish: 0.6, milk: 0.4, weat: 0.4, chaff: 0.2, cows: 0, sheeps: 0.2, dogs: 0.1}
+
+        - from: Wolfila
+          to: Wolfila
+          materials: {wood: 0.5,  stone: 0.5, sand: 0.9, fish: 1,   milk: 0.7, weat: 0.8, chaff: 0.8, cows: 1, sheeps: 0.8, dogs: 0.5}
+
+        - from: Wolfila
+          to: Sasela
+          materials: {wood: 0.25, stone: 0.3, sand: 0.1, fish: 0,   milk: 0.1, weat: 0.0, chaff: 0.0, cows: 0, sheeps: 0.0, dogs: 0.1}
+
+        - from: Wolfila
+          to: Heamoor
+          materials: {wood: 0.2,  stone: 0.1, sand: 0.0, fish: 0,   milk: 0.0, weat: 0.0, chaff: 0.0, cows: 0, sheeps: 0.0, dogs: 0.1}
+
+        - from: Wolfila
+          to: Sago
+          materials: {wood: 0.05, stone: 0.0, sand: 0.0, fish: 0,   milk: 0.2, weat: 0.1, chaff: 0.0, cows: 0, sheeps: 0.2, dogs: 0.1}
+
+        - from: Wolfila
+          to: S_Border
+          materials: {wood: 0.0,  stone: 0.1, sand: 0.0, fish: 0,   milk: 0.8, weat: 0.1, chaff: 0.2, cows: 0, sheeps: 0.0, dogs: 0.2}
+
+    sources: 
+        - name: Lake 
+          materials: {stone: 0.1}
+
+        - name: Wood
+        - name: Beach
+        - name: Grassland
+        - name: Sheep shed
+        - name: Dog kennel
+        - name: Quary
+        - name: Woods
+        - name: Dam
+        - name: River
+        - name: Cow shed
+
+
+
