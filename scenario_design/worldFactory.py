@@ -1,5 +1,8 @@
 import re
-import yaml
+try:
+	import yaml
+except ImportError:
+	raise Exception("yaml not found. Install using:\npip install PyYAML")
 
 def tuple_constructor(loader, node):
 	value = loader.construct_scalar(node)
