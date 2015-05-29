@@ -22,69 +22,70 @@ def rgb_to_hls_int(rgb):
 
     return (round(hue*360), round(lightness*100), round(saturation*100))
 
-def log(text):
-    """Outputs a log string
-    
-    Args:
-        text (string): Sentence to log
-    """
-    print text.center(50,'-')
 
-class MapFactory():
-    def __init__(self, src_image, params = None):
+
+
+class ImageToMap():
+
+    def __init__(
+        self, src_image, output_file_base = 'map', 
+        xml_template = 'template.xml', html_template = 'template.html', 
+        verbose = False):
+        '''Constructor
+
+        Args:
+            src_image (str): Name of source image
+            output_file_base (str, optional): Base name of output files (without extension)
+            xml_template (str, optional): Template file to create xml from
+            html_template (str, optional): Template file to create html from
         '''
-        src_image: ruta de la imagen (.png)
-        params{
-            createHTML:{default 0}/1 Crea un archivo html con la configuracion del mapa
-            createLog:0/{default 1} Crea un log con la informacion de cada px
-            srcDestino:(string) archivo de destino del mapa {default map}
-            srcTemplateMap: (string) template para generar el mapa, es necesario que tenga el atributo {xml} {default template.xml}
-            
-        }'''
-        self.__src_destino = 'map'
-        self.__src_template_map = 'template.xml'
-        self.__src_html_template = 'template.html'
-        self.__create_html = 0
-        self.__create_log = 1
+        self.__src_destino = output_file_base
+        self.__src_template_map = xml_template
+        self.__src_html_template = html_template
         self.file_content = ""
         self.pixel_count = 0
         self.__xml_content = []
-
-        if 'createHTML' in params:
-            self.__create_html = params['createHTML']            
-        if 'srcDestino' in params:
-            self.__src_destino = params['srcDestino']
-        if 'srcTemplateMap' in params:
-            self.__src_template_map = params['srcTemplateMap'] 
-        if 'createLog' in params:
-            self.__create_log = params['createLog']
+        self.verbose = verbose
 
         self.image = Image.open(src_image)       
         self.img_size = self.image.size[0]
 
-    def start(self):
+    def start(self, create_html = False, write_log = True):
         """
         Start image transformation
+        
+        Args:
+            create_html (bool, optional): Output html file
+            write_log (bool, optional): Output log file
         """
         for rgba in self.image.getdata():
-            self.__xml_content.append((self.__get_tile_name_by_rgba(rgba),))
+            self.__xml_content.append(self.__get_tile_name_by_rgba(rgba, write_log))
 
         self.__create_xml()
 
-        if self.__create_log:
-            log('creando log')
+        if write_log:
+            self.print_log('creando log')
             with open('log.txt','wb') as log_file:
                 log_file.write(self.file_content)
-            log('log creado')
+            self.print_log('log creado')
 
-        if self.__create_html:
+        if create_html:
             self.__render_map_to_html()
+
+    def print_log(self, text):
+        """Outputs a log string
+        
+        Args:
+            text (string): Sentence to log
+        """
+        if self.verbose:
+            print text.center(50,'-')
 
     def __create_xml(self):
         """
         Write image data to XML
         """
-        log('creando mapa...')
+        self.print_log('creando mapa...')
         xml_string = ''
         count = 0       
         template_str = "\t\t\t\t<cell tile=\"tls:%s\" />\n"
@@ -96,7 +97,7 @@ class MapFactory():
                 xml_string += "\t\t\t</column>\n"
             if(count == 0 or count%self.img_size == 0):
                 xml_string += "\t\t\t<column>\n"
-            xml_string += template_str % element[0]           
+            xml_string += template_str % element         
             count += 1
 
         xml_string += "\t\t\t</column>\n"
@@ -107,14 +108,14 @@ class MapFactory():
         with open(self.__src_destino+'.xml', 'wb') as by_template:
             by_template.write(parse_structure)
         
-        log('%s creado correctamente' % (self.__src_destino+'.xml'))
+        self.print_log('%s creado correctamente' % (self.__src_destino+'.xml'))
         
 
     def __render_map_to_html(self):
         """
         Write image data to HTML
         """
-        log('creando mapa html')
+        self.print_log('creando mapa html')
         html = ""
         with open(self.__src_html_template, 'r') as template:
             html_template = template.read()
@@ -122,7 +123,7 @@ class MapFactory():
         count = 0
         for tile in self.__xml_content:
             count += 1
-            tile_util = tile[0]
+            tile_util = tile
             color = ''
             if tile_util == 'arena':
                 color = 'red'
@@ -137,15 +138,15 @@ class MapFactory():
         with open(self.__src_destino+'.html', 'wb') as html_file:
             html_file.write(html)
         
-        log('%s creado correctamente' % (self.__src_destino+'.html'))
+        self.print_log('%s creado correctamente' % (self.__src_destino+'.html'))
         
-    def __get_tile_name_by_rgba(self, rgba):
+    def __get_tile_name_by_rgba(self, rgba, write_log = False):
         """
         Compares different hls values to obtain the tile name
         """
         hls_color = rgb_to_hls_int(rgba)
         hls_util_color = hls_color[0]
-        if(self.__create_log):
+        if write_log:
             self.pixel_count += 1
             self.file_content += "Pixel %d value %d %d %d \n" % (
                 self.pixel_count, 
@@ -161,7 +162,5 @@ class MapFactory():
             return 'water'      
 
 if __name__ == '__main__':
-    create_map = MapFactory(
-        'scenario1.png', 
-        {'createHTML': 1, 'srcDestino': 'map2'})
-    create_map.start()
+    create_map = ImageToMap('scenario1.png', output_file_base = 'map2', verbose = True)
+    create_map.start(create_html = True)
