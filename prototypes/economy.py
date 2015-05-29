@@ -26,8 +26,7 @@ import networkx as nx
 import numpy as np
 
 from itertools import chain
-
-from utils import *
+from collections import OrderedDict
 
 def dict2matrix (d):
     return np.matrix (d.values()), d.keys()
