@@ -1,5 +1,10 @@
 import re
 from map_generator import ImageToMap
+
+import sys
+sys.path.append('../src')
+from economy import economy
+
 import xml.etree.ElementTree as ET
 try:
     import yaml
@@ -44,8 +49,22 @@ class WorldFactoryYaml():
                         'value': city[config_name]}
                     cell.append(ET.Element('property', attrib = attrib))
 
-        #Create Economy object
         self.xml = xml
+        #Create Economy object
+
+        world_economy = economy.Economy(parsed_file['economy']['tradeables'])
+        for city in parsed_file['cities']:
+            world_economy.add_market(city['name'])
+
+        for route in parsed_file['economy']['routes']:
+            world_economy.add_route(
+                '{}-{}'.format(route['from'], route['to']),
+                source=route['from'], 
+                destination = route['to'], 
+                traffic = route['materials'])
+
+        self.world_economy = world_economy
+
 
     def get_map_xml(self):
         """Return map parsed from config's terrain with added cities.
@@ -61,8 +80,14 @@ class WorldFactoryYaml():
         Returns:
             Economy: Economy object
         """
-        pass
+        return self.world_economy
+
+
+def main():
+    with file('scenario1.yaml') as scenario:
+        factory = WorldFactoryYaml(scenario)
+    print factory.get_map_xml()
+    print factory.get_economy()  
 
 if __name__ == '__main__':
-    with file('scenario1.yaml') as f:
-        WorldFactoryYaml(f)
+    main()

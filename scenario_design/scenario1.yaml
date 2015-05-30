@@ -2,43 +2,43 @@ terrain: scenario1.png
 
 cities: 
     - name: Tatun
-      position: (1,2)
-      structures: [Lake, Wood, Beach, Grassland, Sheep shed, Dog kennel]
+      position: (11, 2)
+      structures: [Lake, Woods, Beach, Grassland, Sheep shed, Dog kennel]
 
     - name: Wolfila
-      position: (2,3)
+      position: (2, 3)
       structures: [Quary, Woods, Grassland, Dog kennel]
 
     - name: Tumunzah
-      position: (,)
+      position: (2, 4)
       structures: [Lake, Grassland, Beach]
 
     - name: Bardithorp
-      position: (,)
+      position: (2, 5)
       structures: [Dam, Grassland, Sheep shed]
 
     - name: Pafeld
-      position: (,)
+      position: (2, 6)
       structures: [River, Grassland]
 
     - name: Gondone
-      position: (,)
+      position: (2, 7)
       structures: [Quary]
 
     - name: Heamoor
-      position: (,)
+      position: (2, 8)
       structures: [Grassland, Sheep shed, Cow shed]
 
     - name: Caystone
-      position: (,)
+      position: (2, 9)
       structures: [Quary, Dog kennel]
 
     - name: Sasela
-      position: (,)
+      position: (2, 10)
       structures: [Grassland, River]
 
     - name: Sago
-      position: (,)
+      position: (2, 11)
       structures: [Quary]
 
 
@@ -56,7 +56,7 @@ economy:
           materials: {wood: 0.1,  stone: 0.0, sand: 0.5, fish: 0.0, milk: 0.0, weat: 0.0, chaff: 0.0, cows: 0, sheeps: 0.0, dogs: 0.4}
 
         - from: Tatun
-          to: Cystone
+          to: Gondone
           materials: {wood: 0.4,  stone: 0.0, sand: 0.0, fish: 0.6, milk: 0.4, weat: 0.4, chaff: 0.2, cows: 0, sheeps: 0.2, dogs: 0.1}
 
         - from: Wolfila
@@ -75,9 +75,6 @@ economy:
           to: Sago
           materials: {wood: 0.05, stone: 0.0, sand: 0.0, fish: 0,   milk: 0.2, weat: 0.1, chaff: 0.0, cows: 0, sheeps: 0.2, dogs: 0.1}
 
-        - from: Wolfila
-          to: S_Border
-          materials: {wood: 0.0,  stone: 0.1, sand: 0.0, fish: 0,   milk: 0.8, weat: 0.1, chaff: 0.2, cows: 0, sheeps: 0.0, dogs: 0.2}
 
     sources: 
         - name: Lake 
