@@ -29,8 +29,7 @@ class ImageToMap():
 
     def __init__(
         self, src_image, output_file_base = 'map', 
-        xml_template = 'template.xml', html_template = 'template.html', 
-        verbose = False):
+        verbose = False, write_log = False):
         '''Constructor
 
         Args:
@@ -40,37 +39,52 @@ class ImageToMap():
             html_template (str, optional): Template file to create html from
         '''
         self.__src_destino = output_file_base
-        self.__src_template_map = xml_template
-        self.__src_html_template = html_template
         self.file_content = ""
         self.pixel_count = 0
         self.__xml_content = []
         self.verbose = verbose
+        self.__write_log = write_log
+        self.__started = False
 
         self.image = Image.open(src_image)       
         self.img_size = self.image.size[0]
 
-    def start(self, create_html = False, write_log = True):
+    def __start(self):
         """
         Start image transformation
         
         Args:
-            create_html (bool, optional): Output html file
             write_log (bool, optional): Output log file
         """
+        self.__started = True
         for rgba in self.image.getdata():
-            self.__xml_content.append(self.__get_tile_name_by_rgba(rgba, write_log))
+            self.__xml_content.append(self.__get_tile_name_by_rgba(rgba))
 
-        self.__create_xml()
-
-        if write_log:
+        if self.__write_log:
             self.print_log('creando log')
             with open('log.txt','wb') as log_file:
                 log_file.write(self.file_content)
             self.print_log('log creado')
 
-        if create_html:
-            self.__render_map_to_html()
+    def as_html(self, html_template = 'template.html'):
+        """Get image data as html
+        
+        Returns:
+            str: HTML source
+        """
+        if not self.__started:
+            self.__start()
+        return self.__render_map_to_html(html_template)
+
+    def as_xml(self, xml_template = 'template.xml'):
+        """Get image data as xml
+        
+        Returns:
+            str: XML source
+        """
+        if not self.__started:
+            self.__start()
+        return self.__create_xml(xml_template)
 
     def print_log(self, text):
         """Outputs a log string
@@ -81,7 +95,7 @@ class ImageToMap():
         if self.verbose:
             print text.center(50,'-')
 
-    def __create_xml(self):
+    def __create_xml(self, template_file):
         """
         Write image data to XML
         """
@@ -101,23 +115,22 @@ class ImageToMap():
             count += 1
 
         xml_string += "\t\t\t</column>\n"
-        with open(self.__src_template_map, 'r') as template:
+        with open(template_file, 'r') as template:
             xml_template = template.read()
         
         parse_structure = xml_template.replace('{xml}', xml_string)
-        with open(self.__src_destino+'.xml', 'wb') as by_template:
-            by_template.write(parse_structure)
         
-        self.print_log('%s creado correctamente' % (self.__src_destino+'.xml'))
+        self.print_log('XML creado correctamente')
+        return parse_structure
         
 
-    def __render_map_to_html(self):
+    def __render_map_to_html(self, template_file):
         """
         Write image data to HTML
         """
         self.print_log('creando mapa html')
         html = ""
-        with open(self.__src_html_template, 'r') as template:
+        with open(template_file, 'r') as template:
             html_template = template.read()
 
         count = 0
@@ -125,8 +138,8 @@ class ImageToMap():
             count += 1
             tile_util = tile
             color = ''
-            if tile_util == 'arena':
-                color = 'red'
+            if tile_util == 'desert':
+                color = 'yellow'
             elif tile_util == 'grass':
                 color = 'green'
             elif tile_util == 'water':
@@ -135,18 +148,19 @@ class ImageToMap():
             if count % self.img_size == 0:
                 html += "<div style='clear:both'></div>"
                 
-        with open(self.__src_destino+'.html', 'wb') as html_file:
-            html_file.write(html)
         
-        self.print_log('%s creado correctamente' % (self.__src_destino+'.html'))
         
-    def __get_tile_name_by_rgba(self, rgba, write_log = False):
+        self.print_log('HTML creado correctamente')
+
+        return html
+        
+    def __get_tile_name_by_rgba(self, rgba):
         """
         Compares different hls values to obtain the tile name
         """
         hls_color = rgb_to_hls_int(rgba)
         hls_util_color = hls_color[0]
-        if write_log:
+        if self.__write_log:
             self.pixel_count += 1
             self.file_content += "Pixel %d value %d %d %d \n" % (
                 self.pixel_count, 
@@ -163,4 +177,9 @@ class ImageToMap():
 
 if __name__ == '__main__':
     create_map = ImageToMap('scenario1.png', output_file_base = 'map2', verbose = True)
-    create_map.start(create_html = True)
+
+    with open('scenario1.html', 'wb') as html_file:
+        html_file.write(create_map.as_html())
+
+    with open('scenario1.xml', 'wb') as xml_file:
+        xml_file.write(create_map.as_xml())
