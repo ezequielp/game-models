@@ -27,16 +27,16 @@ def marinbin (nmar, nbin, some=None):
 
     if nmar == 0:
         return [0]*nbin
-    ## This is standard stars and bars.
+
     numsymbols = nbin+nmar-1;
     stars = []
-    for subset in itertools.combinations(range(numsymbols), nmar):
-        stars.append(subset);
-    ## Star labels minus their consecutive position becomes their index
-    ## position!
     idx = []
     if not some:
-
+        ## This is standard stars and bars.
+        for subset in itertools.combinations(range(numsymbols), nmar):
+            stars.append(subset);
+        ## Star labels minus their consecutive position becomes their index
+        ## position!
         for comb in stars:
             r = []
             for i in range(nmar):
@@ -52,6 +52,9 @@ def marinbin (nmar, nbin, some=None):
                 c[i][idx[a][b]] += 1;
 
     else:
+        for i in range(some):
+            stars.append(random_combination(range(numsymbols), nmar))
+
         ind = random_permutation(range(len(stars)), some)
         for j in range(some):
             r = []
@@ -79,10 +82,16 @@ def random_permutation(iterable, r=None):
     r = len(pool) if r is None else r
     return tuple(random.sample(pool, r))
 
+def random_combination(iterable, r):
+    "Random selection from itertools.combinations(iterable, r)"
+    pool = tuple(iterable)
+    n = len(pool)
+    indices = sorted(random.sample(xrange(n), r))
+    return tuple(pool[i] for i in indices)
+
 def distribute(quantity, total_stock, seed):
     random.seed(seed)
     quantities = marinbin (total_stock, quantity, 1)
-    print total_stock, quantity
 
     return quantities
 
