@@ -23,6 +23,7 @@ import random
 def marinbin (nmar, nbin, some=None):
     ## Returns the position of nmar in nbin, allowing the marbles to be in the same bin.
     import itertools
+    from time import time
 
     if nmar == 0:
         return [0]*nbin
@@ -31,30 +32,44 @@ def marinbin (nmar, nbin, some=None):
     stars = []
     for subset in itertools.combinations(range(numsymbols), nmar):
         stars.append(subset);
-
     ## Star labels minus their consecutive position becomes their index
     ## position!
     idx = []
-    for comb in stars:
-        r = []
-        for i in range(nmar):
-            r.append(comb[i]-i)
-        idx.append(r)
-
-    nr = len(idx)
     if not some:
+
+        for comb in stars:
+            r = []
+            for i in range(nmar):
+                r.append(comb[i]-i)
+            idx.append(r)
+
+        nr   = len(idx)
         arng = range(nr)
 
+        c  = [[0]*nbin for i in range(len(arng))]
+        for i,a in enumerate(arng):
+            for b in range (nmar):
+                c[i][idx[a][b]] += 1;
+
     else:
+        ind = random_permutation(range(len(stars)), some)
+        for j in range(some):
+            r = []
+            comb = stars[ind[j]]
+            for i in range(nmar):
+                r.append(comb[i]-i)
+            idx.append(r)
+        nr   = len(idx)
         arng = random_permutation(range(nr), some)
 
-    c  = [[0]*nbin for i in range(len(arng))]
-    for i,a in enumerate(arng):
-        for b in range (nmar):
-            c[i][idx[a][b]] += 1;
+        c  = [[0]*nbin for i in range(len(arng))]
 
-    if some == 1:
-        c = c[0]
+        for i,a in enumerate(arng):
+            for b in range (nmar):
+                c[i][idx[a][b]] += 1;
+
+        if some == 1:
+            c = c[0]
 
     return c
 
@@ -67,6 +82,7 @@ def random_permutation(iterable, r=None):
 def distribute(quantity, total_stock, seed):
     random.seed(seed)
     quantities = marinbin (total_stock, quantity, 1)
+    print total_stock, quantity
 
     return quantities
 
