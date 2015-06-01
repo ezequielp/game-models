@@ -2,21 +2,21 @@ class Blacksmith:
     def __init__(self, name, swords):
         self.swords = swords
         self.name = name
-        
+
     def buy(self, quantity):
         if (quantity<=self.swords):
             self.swords -= quantity
             return True
         else:
             return False
-            
+
     def sell(self, quantity):
         self.swords += quantity
         return True
-        
+
     def inventory(self):
         return self.swords
-        
+
 
 import random
 
@@ -67,9 +67,9 @@ def random_permutation(iterable, r=None):
 def distribute(quantity, total_stock, seed):
     random.seed(seed)
     quantities = marinbin (total_stock, quantity, 1)
-    
+
     return quantities
-    
+
 class Market:
     def __init__(self, state, seed, deltas = {}):
         (quantity, total_stock) = state
@@ -78,9 +78,9 @@ class Market:
         corrected_stocks = list(self.generated_stocks)
         for i, delta in deltas.items():
             corrected_stocks[i] += delta
-        
+
         self.merchants = [Blacksmith(n, s) for n, s in zip(names, corrected_stocks)]
-        
+
     def state(self):
         m = (len(self.merchants), sum(self.generated_stocks))
         return m
@@ -88,14 +88,10 @@ class Market:
     def deltas(self):
         deltas = dict((i, merchant.inventory()-stock) for i, (stock, merchant) in enumerate(zip(self.generated_stocks, self.merchants)) if stock != merchant.inventory())
         return deltas
-        
+
     def inventory(self):
         return dict([(bl.name, bl.inventory()) for bl in self.merchants])
-            
-            
+
+
     def merchant(self, i):
         return self.merchants[i]
-        
-        
-
-
