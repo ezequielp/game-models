@@ -2,7 +2,7 @@ from cocos.text import Label
 import cocos.draw
 import numpy as np
 import pyglet
-from cocos.layer import Layer 
+from cocos.layer import Layer
 from math import cos, sin, radians, atan2
 
 def rotationMatrix(angle):
@@ -37,8 +37,8 @@ class Arrow(cocos.draw.Canvas):
         self.move_to(self.points[0])
         for point in self.points[1:]:
             self.line_to( point )
-        
-        
+
+
 class RefreshInventory():
     def __init__(self, economy, town_map, town):
         self.map = town_map
@@ -54,11 +54,11 @@ class RefreshInventory():
             pass
 
         if any(self.tradeables):
-            tradeables = self.economy.market(self.town['town_name']).items()
-            text = "\n".join("{}: {}".format(t[0], i)  
-                for (t, i) in tradeables 
+            tradeables = self.economy.inventory(self.town['town_name']).items()
+            text = "\n".join("{}: {}".format(t[0], i)
+                for (t, i) in tradeables
                 if t in self.tradeables)
-            tradeable_info = Label(text, width = 2*self.town.width, 
+            tradeable_info = Label(text, width = 2*self.town.width,
                 anchor_x = "center", anchor_y = "top", multiline = True)
             tradeable_info.position = self.town.midbottom
             self.map.add(tradeable_info, name = layer_name)
@@ -71,14 +71,14 @@ class RefreshInventory():
 
 class SimpleWindow(Layer):
     is_event_handler = True
-    def __init__(self, color, window_name = "Simple Window", 
+    def __init__(self, color, window_name = "Simple Window",
         width=None, height=None):
         super(SimpleWindow, self).__init__()
         red, green, blue, alpha = color
 
-        widget_bar = WidgetBar((red, green, blue, 255), 
+        widget_bar = WidgetBar((red, green, blue, 255),
             window_name, width = width)
-        contents = cocos.layer.ColorLayer(red, green, blue, alpha, 
+        contents = cocos.layer.ColorLayer(red, green, blue, alpha,
             width = width, height = height)
 
         self.widget_bar, self.contents = widget_bar, contents
@@ -152,7 +152,7 @@ class SimpleWindow(Layer):
 
 class EconomyInspector(SimpleWindow):
     def __init__(self, economy, map):
-        super(EconomyInspector, self).__init__((20, 20, 20, 128), 
+        super(EconomyInspector, self).__init__((20, 20, 20, 128),
             width = 100, height = 100, window_name = "Economy Inspector")
         self.visible = False
         self.economy = economy
@@ -165,8 +165,8 @@ class EconomyInspector(SimpleWindow):
         if tile and 'town_name' in tile:
             if tile['town_name'] in self.economy:
                 from economy.market import Market
-                market = Market((3, int(self.economy.market(tile['town_name'], "wood"))), "seed")
-                inv = "\n".join("{} has {} wood".format(*x) for x in market.inventory().items()) 
+                market = Market((3, int(self.economy.inventory(tile['town_name'], "wood"))), "seed")
+                inv = "\n".join("{} has {} wood".format(*x) for x in market.inventory().items())
                 text = Label("{}\n{}".format(tile['town_name'], inv), anchor_y = "bottom", multiline = True, width=600)
                 text.position = (10, 10)
 
@@ -187,7 +187,7 @@ class EconomyInspector(SimpleWindow):
     def toggle_routes(self, tradeable, show, outgoing = False, incoming = False):
         markets = self.map.find_cells(market = True)
         markets = dict((mkt['town_name'], mkt) for mkt in markets)
-        
+
         for arrow in self.arrows.get(tradeable, []):
             self.map.remove(arrow)
 
@@ -201,7 +201,7 @@ class EconomyInspector(SimpleWindow):
                 destination = np.array(markets[destination].center)
                 source = np.array(markets[source].center)
                 displacement = destination-source
-                
+
                 displacement = displacement/np.linalg.norm(displacement)
                 source = source + 50*displacement
                 destination = source + 100*displacement
@@ -209,7 +209,7 @@ class EconomyInspector(SimpleWindow):
                 if arrow_width == 0:
                     continue
                 arrow_color = self.colors.get(tradeable, (255, 255, 255, 200))
-                arrow = Arrow(source.tolist(), destination.tolist(), 
+                arrow = Arrow(source.tolist(), destination.tolist(),
                     arrow_color, width=arrow_width)
 
                 self.map.add(arrow)
@@ -225,7 +225,7 @@ class EconomyInspector(SimpleWindow):
                 pass
 
             if show:
-                title = Label(town['town_name'], 
+                title = Label(town['town_name'],
                     anchor_x = 'center', anchor_y = "bottom")
                 title.position = town.midbottom
                 self.map.add(title, name="town name " + town['town_name'])
@@ -236,7 +236,7 @@ class EconomyInspector(SimpleWindow):
         for town in self.map.find_cells(market =True):
             updater_name = "tradables in " + town['town_name']
             if updater_name not in self.updates and show:
-                self.updates[updater_name] = RefreshInventory(self.economy, 
+                self.updates[updater_name] = RefreshInventory(self.economy,
                     self.map, town)
 
             if show:
@@ -245,7 +245,7 @@ class EconomyInspector(SimpleWindow):
                 self.updates[updater_name].remove_tradeable(tradeable)
 
             self.updates[updater_name]()
-                
+
 
         return True
 
@@ -263,7 +263,7 @@ class Toggle(cocos.layer.ColorLayer):
     def __init__(self, label, on_toggle = None, width = None):
         super(Toggle, self).__init__(*self.colors[False], width = width)
         self.on_toggle = on_toggle
-        
+
         self.label = Label(label, multiline = False, width = width,
             anchor_x = 'center', anchor_y = 'center')
         self.label.position = self.width/2, self.label.element.content_height/2
@@ -285,13 +285,13 @@ class Toggle(cocos.layer.ColorLayer):
 class PanelTitle(Toggle):
     def __init__(self, label, width = None, color = (100, 0, 100, 128)):
         self.colors = {False: color}
-        super(PanelTitle, self).__init__(label, width  = width, 
+        super(PanelTitle, self).__init__(label, width  = width,
             on_toggle = lambda state: False)
-        
+
 class WidgetBar(PanelTitle):
     def __init__(self, color, label, width=None):
         super(WidgetBar, self).__init__(label, width = width, color = color)
-        
+
 class TradeableClosure():
     def __init__(self, tradeable, callback, *params, **kparams):
         self.tradeable = tradeable
@@ -300,7 +300,7 @@ class TradeableClosure():
         self.kparams = kparams
 
     def __call__(self, value):
-        return self.callback(self.tradeable, value, 
+        return self.callback(self.tradeable, value,
             *(self.params), **(self.kparams))
 
 
@@ -311,17 +311,17 @@ class SidePanel(SimpleWindow):
         toggles = []
         for tradeable in tradeables:
             tradeable_closure = TradeableClosure(
-                    tradeable, economy_inspector.toggle_routes, 
+                    tradeable, economy_inspector.toggle_routes,
                     outgoing = True)
 
-            toggle = Toggle(tradeable, width = 200, 
+            toggle = Toggle(tradeable, width = 200,
                 on_toggle = tradeable_closure)
 
             toggles.append(toggle)
-        
+
         toggles.append(PanelTitle("Show outgoing for:", width  = 200))
         for tradeable in tradeables:
-            tradeable_closure = TradeableClosure(tradeable, 
+            tradeable_closure = TradeableClosure(tradeable,
                 economy_inspector.toggle_town_inventory)
 
             toggle = Toggle(tradeable, width = 200,
@@ -330,21 +330,21 @@ class SidePanel(SimpleWindow):
             toggles.append(toggle)
 
         toggles.append(PanelTitle("Show inventory of:", width  = 200))
-        toggles.append(Toggle("Show town names", 
+        toggles.append(Toggle("Show town names",
             width  = 200, on_toggle = economy_inspector.toggle_town_names))
 
         height =  max(t.label.element.content_height for t in toggles)
-        
-        super(SidePanel, self).__init__((20, 20, 20, 128), 
-            width = 200, height = len(toggles)*height, 
+
+        super(SidePanel, self).__init__((20, 20, 20, 128),
+            width = 200, height = len(toggles)*height,
             window_name = "Display options")
-        
+
         self.position = (cocos.director.director.window.width-200, 100)
         self.visible = True
         self.toggles = toggles
         self.toggle_height = height
 
-        for i in range(len(toggles)): 
+        for i in range(len(toggles)):
             toggles[i].position = (0, i*height)
             toggles[i].height = height
             self.add(toggles[i])
@@ -358,7 +358,7 @@ class SidePanel(SimpleWindow):
                 toggle.switch()
                 return True
         return ret
-                
+
 
     def toggle_in(self, x, y):
         w_x, w_y = self.position
@@ -372,6 +372,3 @@ class SidePanel(SimpleWindow):
             return self.toggles[i]
         else:
             return None
-
-
-

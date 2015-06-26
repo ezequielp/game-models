@@ -58,7 +58,7 @@ class Sandbox(cocos.layer.ColorLayer, pyglet.event.EventDispatcher):
 	def on_mouse_release(self, x, y, buttons, modifiers):
 		if buttons & pyglet.window.mouse.LEFT and self.clicked and (self.clicked == self.get_tile_at_virtual_coord(x, y)):
 			clicked, self.clicked = self.clicked, None
-			return self.dispatch_event('on_tile_clicked', clicked) 
+			return self.dispatch_event('on_tile_clicked', clicked)
 
 	def on_resize(self, width, height):
 		if width > self.width or height > self.height:
@@ -79,19 +79,19 @@ if __name__ == '__main__':
 	if map_file == 'map1.xml':
 		e = economy.Economy(('wood', 'ore'))
 
-		e.add_market('town a', wood = 200, ore = 100)
-		e.add_market('town b', wood = 300, ore = 150)
-		e.add_market('town c', wood = 100, ore = 500)
+		e.add_city(name='town a', inventory=dict(wood=200, ore=100))
+		e.add_city(name='town b', inventory=dict(wood=300, ore=150))
+		e.add_city(name='town c', inventory=dict(wood=100, ore=500))
 
-		e.add_route('town a self', source="town a", destination = "town a", traffic = (0.3,0.8))
-		e.add_route('a-b path', source="town a", destination = "town b", traffic = (0.3,0.1))
-		e.add_route('a-c path', source="town a", destination = "town c", traffic = ('rest','rest'))
+		e.add_route(name='town a self', ini="town a", end="town a", traffic=dict(wood=0.3,ore=0.8))
+		e.add_route(name='a-b path', ini="town a", end="town b", traffic=dict(wood=0.3,ore=0.1))
+		e.add_route(name='a-c path', ini="town a", end="town c", traffic=dict(wood='rest',ore='rest'))
 
-		e.add_route('b-c smuggle', source="town b", destination = "town c", traffic = (0.1,0.0))
-		e.add_route('b-a path', source="town b", destination = "town a", traffic = (0.1,0.9))
-		e.add_route('town b self', source="town b", destination = "town b", traffic = ("rest","rest"))
+		e.add_route(name='b-c smuggle', ini="town b", end="town c", traffic=dict(wood=0.1,ore=0.0))
+		e.add_route(name='b-a path', ini="town b", end="town a", traffic=dict(wood=0.1,ore=0.9))
+		e.add_route(name='town b self', ini="town b", end="town b", traffic=dict(wood="rest",ore="rest"))
 
-		e.add_route('town c self', source="town c", destination = "town c", traffic = ("rest","rest"))
+		e.add_route(name='town c self', ini="town c", end="town c", traffic=dict(wood="rest",ore="rest"))
 
 		colors = [('ore', (255, 0, 0)), ('wood', (0,0,255))]
 	elif map_file == 'map2.xml':
@@ -111,7 +111,7 @@ if __name__ == '__main__':
 		h.position = (0, 50)
 		for tradeable, color in colors:
 			h.tradeable_color(tradeable, color)
-		
+
 		sbx.push_handlers(h)
 		sbx.add(h)
 		sbx.add(sp)
@@ -123,6 +123,6 @@ if __name__ == '__main__':
 		pass
 
 
-	
+
 	cocos.director.director.economy = e
 	cocos.director.director.run(main_scene)
