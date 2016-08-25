@@ -46,29 +46,29 @@ class ImageToMap():
         self.__write_log = write_log
         self.__started = False
 
-        self.image = Image.open(src_image)       
+        self.image = Image.open(src_image)
         self.img_size = self.image.size[0]
 
     def __start(self):
         """
         Start image transformation
-        
+
         Args:
             write_log (bool, optional): Output log file
         """
         self.__started = True
-        for rgba in self.image.getdata():
-            self.__xml_content.append(self.__get_tile_name_by_rgba(rgba))
+        self.__xml_content = (self.__get_tile_name_by_rgba(rgba)
+                              for rgba in self.image.getdata())
 
         if self.__write_log:
             self.print_log('creando log')
-            with open('log.txt','wb') as log_file:
+            with open('log.txt', 'wb') as log_file:
                 log_file.write(self.file_content)
             self.print_log('log creado')
 
-    def as_html(self, html_template = 'template.html'):
+    def as_html(self, html_template='template.html'):
         """Get image data as html
-        
+
         Returns:
             str: HTML source
         """
@@ -76,9 +76,9 @@ class ImageToMap():
             self.__start()
         return self.__render_map_to_html(html_template)
 
-    def as_xml(self, xml_template = 'template.xml'):
+    def as_xml(self, xml_template='template.xml'):
         """Get image data as xml
-        
+
         Returns:
             str: XML source
         """
@@ -88,12 +88,12 @@ class ImageToMap():
 
     def print_log(self, text):
         """Outputs a log string
-        
+
         Args:
             text (string): Sentence to log
         """
         if self.verbose:
-            print text.center(50,'-')
+            print text.center(50, '-')
 
     def __create_xml(self, template_file):
         """
@@ -101,28 +101,31 @@ class ImageToMap():
         """
         self.print_log('creando mapa...')
         xml_string = ''
-        count = 0       
+        count = 0
         template_str = "\t\t\t\t<cell tile=\"tls:%s\" />\n"
-        final_count = self.img_size*self.img_size
+        final_count = self.img_size * self.img_size
 
         for element in self.__xml_content:
-            if((count%self.img_size == 0 and not count == 0 ) 
-                or (count == final_count)):
+            first_item = count == 0
+            new_column = count % self.img_size == 0 and not first_item
+
+            if new_column or count == final_count:
                 xml_string += "\t\t\t</column>\n"
-            if(count == 0 or count%self.img_size == 0):
+
+            if(first_item or new_column):
                 xml_string += "\t\t\t<column>\n"
-            xml_string += template_str % element         
+
+            xml_string += template_str % element
             count += 1
 
         xml_string += "\t\t\t</column>\n"
         with open(template_file, 'r') as template:
             xml_template = template.read()
-        
+
         parse_structure = xml_template.replace('{xml}', xml_string)
-        
+
         self.print_log('XML creado correctamente')
         return parse_structure
-        
 
     def __render_map_to_html(self, template_file):
         """
@@ -147,13 +150,11 @@ class ImageToMap():
             html += html_template % (color, count, tile)
             if count % self.img_size == 0:
                 html += "<div style='clear:both'></div>"
-                
-        
-        
+
         self.print_log('HTML creado correctamente')
 
         return html
-        
+
     def __get_tile_name_by_rgba(self, rgba):
         """
         Compares different hls values to obtain the tile name
@@ -163,20 +164,24 @@ class ImageToMap():
         if self.__write_log:
             self.pixel_count += 1
             self.file_content += "Pixel %d value %d %d %d \n" % (
-                self.pixel_count, 
+                self.pixel_count,
                 hls_color[0], hls_color[1], hls_color[2])
         if(hls_util_color < 120):
-            #Color rojo
+            # Color rojo
             return 'arena'
         elif(hls_util_color >= 120 and 150 > hls_util_color):
-            #color verde
+            # color verde
             return 'grass'
         elif(hls_util_color >= 150):
-            #color azul
-            return 'water'      
+            # color azul
+            return 'water'
 
 if __name__ == '__main__':
-    create_map = ImageToMap('scenario1.png', output_file_base = 'map2', verbose = True)
+    create_map = ImageToMap(
+        'scenario1.png',
+        output_file_base='map2',
+        verbose=True
+    )
 
     with open('scenario1.html', 'wb') as html_file:
         html_file.write(create_map.as_html())

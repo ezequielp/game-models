@@ -1,2 +1,5 @@
 *.pyc
 *.*~
+game-models.sublime-workspace
+game-models.sublime-project
+.anaconda
