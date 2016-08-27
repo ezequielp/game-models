@@ -1,130 +1,101 @@
-#!/usr/bin/python
-# -*- coding:utf-8 -*-
-from __future__ import division
 import economy
 import unittest
-import numpy as np
-import networkx as nx
-from utils import *
+from collections import namedtuple
 
-NAMES = ["Tatun","Wolfila","Tumunzah","Bardithorp","Pafeld","Gondone",\
-          "Heamoor","Caystone","Sasela","Sago"]
-NAMES.sort()
+Goods = namedtuple("Goods", ('swords'))
+
 
 class EconomyTestCase(unittest.TestCase):
     def setUp(self):
-        seed = 123456678
-        np.random.seed(seed)
-        G     = nx.DiGraph(nx.barabasi_albert_graph(len(NAMES), 2, seed))
-        for e in G.edges_iter():
-            G.add_edge(e[1],e[0])
-        for n in G.nodes_iter():
-            G.add_edge(n,n)
+        self.economy = economy.Economy(tradeables=Goods._fields)
+        add_route = self.economy.add_route
+        add_market = self.economy.add_market
 
-        labels= {n:v for n,v in zip(G.nodes(),NAMES)}
-        pos   = nx.spring_layout(G)
+        add_market("town a", inventory=Goods(10))
+        add_market("town b", inventory=Goods(20))
+        add_market("town c", inventory=Goods(30))
+        add_market("town d", inventory=Goods(25))
 
-        self.tradeables = ('wood','stone')
-        self.economy = economy.Economy(tradeables = self.tradeables)
-        self.amount = (lambda i: 20*i, lambda i: 2*i+1)
-        self.cities = []
-        for n in G.nodes():
-            c = dict()
-            c['name'] = labels[n]
-            v = dict(zip (self.tradeables,[s(n) for s in self.amount]))
-            c['inventory'] = v
-            c['pos'] = pos[n]
-            c['stats'] = OrderedDict(altruism=np.random.randint(0,10),guts=np.random.randint(0,10))
-            self.cities.append(c)
-
-        for c in self.cities:
-            self.economy.add_city(c)
-
-        # Roads
-        self.routes = []
-        danger = 1e3*np.random.rand(len(G.edges()))
-        danger = danger / np.sum(danger)
-        traffic = np.random.rand(len(G.edges()),len(self.economy.__stock_order__))
-        # Normalize
-        tmp = np.zeros([len(G.nodes()),traffic.shape[1]])
-        for i,e in enumerate(G.edges_iter()):
-                tmp[e[0],:] = tmp[e[0],:] + traffic[i,:]
-        for i,e in enumerate(G.edges_iter()):
-                traffic[i,:] = traffic[i,:] / tmp[e[0],:]
-
-        for i,e in enumerate(G.edges_iter()):
-            r = dict()
-            r['ini'] = labels[e[0]]
-            r['end'] = labels[e[1]]
-            r['name'] = '->'.join([r['ini'],r['end']])
-            r['traffic'] = dict(zip(self.economy.__stock_order__,traffic[i,:]))
-            ini = self.economy.map.node[r['ini']]
-            end = self.economy.map.node[r['end']]
-            r['length'] = np.sum((end['pos']-ini['pos'])**2)
-            r['danger'] = danger[i]
-            self.economy.add_route(r)
+        add_route("route 1", start="town a", end="town b", traffic=Goods(0.8))
+        add_route("route 2", start="town a", end="town c", traffic=Goods("rest"))
+        add_route("route 3", start="town b", end="town a", traffic=Goods(0.3))
+        add_route("route 4", start="town b", end="town c", traffic=Goods(0.6))
+        add_route("route 5", start="town b", end="town b", traffic=Goods("rest"))
+        add_route("route 6", start="town c", end="town b", traffic=Goods(0.4))
+        add_route("route 7", start="town c", end="town d", traffic=Goods("rest"))
+        add_route("route 8", start="town d", end="town d", traffic=Goods("rest"))
 
     def test_contains(self):
-        self.assertTrue(NAMES[0] in self.economy)
+        """Economy can be queried for its components in a pythonic way"""
+        self.assertTrue("town a" in self.economy)
+        # self.assertTrue("route 1" in self.economy)  # Is this useful?
 
-    def test_inventory(self):
-#        import pdb
-#        pdb.set_trace()
-        for i,c in enumerate(NAMES):
-          self.assertEqual(self.amount[0](i), self.economy.inventory(c, "wood"))
-          self.assertEqual(self.amount[1](i), self.economy.inventory(c, "stone"))
+    def test_route(self):
+        """"We can query goods trade on each route"""
+        economy = self.economy
+        self.assertAlmostEqual(0.8, economy.traffic("route 1", "swords"))
+        self.assertAlmostEqual(0.2, economy.traffic("route 2", "swords"))
+        self.assertAlmostEqual(0.3, economy.traffic("route 3", "swords"))
+        self.assertAlmostEqual(0.6, economy.traffic("route 4", "swords"))
+        self.assertAlmostEqual(0.1, economy.traffic("route 5", "swords"))
 
-    def test_calcstock(self):
-        s = np.matrix(self.economy.calc_stock().values())
-        o = self.economy.stock_order()
-        v = np.matrix([[0,0]])
-        for k,i in o.items():
-            j = self.tradeables.index(k)
-            v[0,i] = sum(self.amount[j](z) for z in range(len(NAMES)))
+    def test_market(self):
+        """We can query goods existences on each market"""
+        economy = self.economy
+        self.assertEqual(10, economy.stock("town a", "swords"))
+        self.assertEqual(20, economy.stock("town b", "swords"))
+        self.assertEqual(30, economy.stock("town c", "swords"))
+        self.assertEqual(25, economy.stock("town d", "swords"))
 
-        self.assertTrue(np.array_equal(v, s))
+    def test_route_default_traffic(self):
+        """I'm assuming defining a route without traffic sets it
+        to what it takes to add up to 1"""
+        route = self.economy.traffic
 
-        for k,i in o.items():
-            s = self.economy.calc_stock(k)
-            self.assertEqual(s,v[0,i])
-
-    def test_assemble(self):
-        self.economy.__assemble__()
-
-    def test_step(self):
         self.economy.step()
 
-    def test_updatetrade(self):
-        self.economy.update_trade()
+        self.assertAlmostEqual(0.2, route("route 2", "swords"))
+        self.assertAlmostEqual(0.1, route("route 5", "swords"))
 
-    def test_cityexport(self):
-        self.economy.city_export(NAMES[0],self.tradeables[0])
-        self.economy.city_export(NAMES[0])
-        self.economy.city_export(stuff=self.tradeables[0])
-        self.economy.city_export()
+    def test_step(self):
+        economy = self.economy
+        """Test that running one step modifies market existences"""
+        economy.step()
 
-    def test_cityexportok(self):
-        for c in self.economy.city_names():
-            for s in self.economy.total_stock.keys():
-                self.assertTrue(self.economy.is_city_export_ok(c,s))
+        # Existences on each market change
+        self.assertEqual(6, economy.stock("town a", "swords"))
+        self.assertEqual(22, economy.stock("town b", "swords"))
+        self.assertEqual(14, economy.stock("town c", "swords"))
+        self.assertEqual(43, economy.stock("town d", "swords"))
 
-    def test_addroute_fail(self):
-        city = 'test'
-        v = dict(zip (self.tradeables,[s(0) for s in self.amount]))
-        self.economy.add_city(name=city,\
-                              inventory=v,\
-                              pos=[0,0],\
-                              stats={'altruism':0,'guts':0})
-        self.economy.add_route(name='ok', ini=city,\
-                                          end=city,\
-                                          traffic={'wood':'rest','stone':'rest'},\
-                                          length=1,\
-                                          danger=1)
-        with self.assertRaises(ValueError):
-            self.economy.add_route(name='wrong', ini=city,\
-                                          end=city,\
-                                          traffic={'wood':'rest','stone':'rest'},\
-                                          length=1,\
-                                          danger=1)
+        # Routes are not affected
+        self.assertAlmostEqual(0.8, economy.traffic("route 1", "swords"))
+        self.assertAlmostEqual(0.2, economy.traffic("route 2", "swords"))
+        self.assertAlmostEqual(0.3, economy.traffic("route 3", "swords"))
+        self.assertAlmostEqual(0.6, economy.traffic("route 4", "swords"))
+        self.assertAlmostEqual(0.1, economy.traffic("route 5", "swords"))
 
-# vim: set expandtab tabstop=4 :
+    def test_find_routes(self):
+        """More complex queries can be performed"""
+        return
+        route_finder = self.economy.find_routes
+        from_town_a = set(
+            ("route 1", "town a", "town b"),
+            ("route 2", "town a", "town b")
+        )
+        from_town_b = set(
+            ("route 3", "town b", "town a"),
+            ("route 4", "town b", "town c"),
+            ("route 5", "town b", "town b")
+        )
+        to_town_a = set(("route 3", "town b", "town a"))
+        to_town_b = set(
+            ("route 1", "town a", "town b"),
+            ("route 5", "town b", "town b"),
+            ("route 6", "town c", "town b")
+        )
+        self.assertEqual(from_town_a, route_finder(source="town a"))
+        self.assertEqual(from_town_b, route_finder(source="town b"))
+
+        self.assertEqual(to_town_a, route_finder(destination="town a"))
+        self.assertEqual(to_town_b, route_finder(destination="town b"))
