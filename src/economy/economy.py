@@ -25,11 +25,12 @@ from __future__ import division
 import networkx as nx
 import numpy as np
 
-from operator import itemgetter
-from collections import OrderedDict, defaultdict, namedtuple
+from collections import OrderedDict, namedtuple
 from itertools import groupby
-__route_fields__ = ('start', 'end', 'traffic', 'length', 'danger')
-__city_fields__ = ('stats', 'pos', 'inventory')
+
+iEconomyBP = namedtuple("EconomyBlueprint", ('tradeables', 'markets', 'routes'))
+iMarketBP = namedtuple("MarketBlueprint", ('name', 'tradeables'))
+iRouteBP = namedtuple("RouteBlueprint", ('name', 'start', 'end', 'traffic'))
 
 
 def dict2matrix(d):
@@ -38,14 +39,6 @@ def dict2matrix(d):
 
 def is_within_eps(value):
     return np.abs(value) <= np.sqrt(np.spacing(1))
-
-
-def extract_route(attr):
-    return tuple(attr.get(k, None) for k in __route_fields__)
-
-
-def extract_city(attr):
-    return tuple(attr.get(k, None) for k in __city_fields__)
 
 
 def validate_routes(routes, existing_markets, valid_goods):
@@ -75,6 +68,7 @@ def validate_routes(routes, existing_markets, valid_goods):
         except:
             raise ValueError("{} does not contain {}".format(traffic, g))
 
+
 def validate_markets(markets, valid_goods):
     names = [market.name for market in markets]
     repeated = [name for name in set(names) if names.count(name) > 1]
@@ -90,10 +84,6 @@ def validate_markets(markets, valid_goods):
             # City can't add tradeables
             raise KeyError("City {} has invalid inventories {}"
                            .format(name, invalid_inventory))
-
-iEconomyBP = namedtuple("EconomyBlueprint", ('tradeables', 'markets', 'routes'))
-iMarketBP = namedtuple("MarketBlueprint", ('name', 'tradeables'))
-iRouteBP = namedtuple("RouteBlueprint", ('name', 'start', 'end', 'traffic'))
 
 
 def validate(bp):
@@ -132,8 +122,8 @@ def autocomplete(bp):
     for info, group in outgoing:
         group = list(group)
         try:
-            route_name = next(n for n, _ ,_ ,q in group if q == 'rest')
-        except StopIteration, e:
+            route_name = next(n for n, _, _, q in group if q == 'rest')
+        except StopIteration:
             continue
 
         town_name, good_name = info
@@ -211,19 +201,43 @@ class Economy():
     """A simulation of the trading aspect of an economy.
 
     Economy is an Observable built from a blueprint, which is assumed to be consistent.
+    You can't modify the economy routes or markets after instantiation, a new Economy
+    object needs to be created for that.
+
     Economy on itself needs to observe a tick stream to emit events.
     """
 
     # This will be the stable interface
     def __init__(self, blueprint):
-
-        # contains the good for which export is already fully defined
-        self.export_complete = defaultdict(set)
-
+        """
+        Initialize internal structures from blueprint.
+        """
         self.map = nx.MultiDiGraph()
+        tradeables, markets, routes = blueprint
 
-        self.total_stock = OrderedDict().fromkeys(sorted_tradeables, 0)
-        self.existing_goods = self.total_stock.keys()
+        self.total_stock = OrderedDict().fromkeys(tradeables, 0)
+
+        # Add markets as nodes
+        for name, inventory in markets:
+            inventory = inventory._asdict()
+
+            for good, stock in inventory.items():
+                self.total_stock[good] += stock
+
+            self.map.add_node(name, attr_dict=dict(**inventory),
+                              inventory=inventory.keys())
+
+        # Add routes as edges
+        for name, start, end, traffic in routes:
+            traffic = traffic._asdict()
+            self.map.add_edge(start, end,
+                              attr_dict=traffic,
+                              traffic=traffic,
+                              name=name)
+
+        self.existing_goods = tradeables
+
+        self.__assemble__()
 
     def __iter__(self):
         return self.city_names()
@@ -248,83 +262,51 @@ class Economy():
             ret = ret[stat]
         return ret
 
-    def add_market(self, name, inventory, **city):
-        if callable(inventory._asdict):
-            inventory = inventory._asdict()
+    def __assemble__(self):
+        nx.freeze(self.map)
 
-        city.update({'inventory': inventory})
-        validate_market(name, city, self.city_names(), self.existing_goods)
-        # Validate data
+        self.__city_order__ = self.city_order().keys()
 
-        for k, v in inventory.items():
-            self.total_stock[k] += v
+        self.__assemble_trade()
 
-        stats, pos, _ = extract_city(city)
+    def __assemble_trade(self):
+        self.TRADE_matrix = []
+        self.TRADE_state = []
+        m = self.map
+        for k in self.existing_goods:
+            # This produces a left stochastic matrix
+            A = nx.attr_matrix(self.map, edge_attr=k, rc_order=self.__city_order__)
+            if not all(is_within_eps(1.0 - x) for x in np.sum(A, axis=1)):
+                raise ValueError('Route traffics are not normalized')
 
-        # Ideally the data would be stored in a dict in the attribute
-        # specified by tradeables. But then nx.set_node_attributes
-        # (in __assemble__) needs ot be re-implemented, ergo TODO
-        m = dict(**inventory)
+            self.TRADE_matrix.append(A)
 
-        self.map.add_node(name, attr_dict=m,
-                          inventory=inventory.keys(),
-                          stats=stats,
-                          pos=pos)
+            P = np.matrix([0] * len(self.__city_order__))
+            if self.total_stock[k] > 0:
+                for j, n in enumerate(self.__city_order__):
+                    P[0, j] = m.node[n][k]
+                P = P / self.total_stock[k]
 
-    def add_route(self, name, start, end, traffic, **attr):
-        """Adds a unidirectional route to the economy.
+            self.TRADE_state.append(P)
 
-        Args:
-            name: The name of the route.
-            start: The name of the market that sells on this route.
-            end: The name of the market that buys on this route.
-            traffic: Dictionary-like structure detailing the goods being traded on this
-                route in the form: { good: volume|'rest' } .
-                When used as a value, the keyword 'rest' means that this route will trade
-                all the surplus of good from town 'start' to town 'end'
-            attr: Other data that can be added to the route for tagging purposes.
+    def step(self):
+        for i, k in enumerate(self.existing_goods):
+            if self.total_stock[k] > 0:
+                p_ = self.TRADE_state[i] * self.TRADE_matrix[i]
+                dn = 0.0
+                #              #dn = s * S_rate (i) - d * D_rate(i); # sources dist
+                n_ = np.maximum(p_ * self.total_stock[k] + dn, 0.0)
 
-        Returns:
-            None
-        """
-        if callable(traffic._asdict):
-            traffic = traffic._asdict()
+                # Minimize change of total stock due to round off
+                n_ = (np.round(n_), np.round(np.sum(n_ - np.round(n_))))
+                n_ = n_[0] + n_[1] * (n_[0] == n_[0].min())
 
-        attr.update({'start': start, 'end': end, 'traffic': traffic})
-        validate_route(name, attr, self.city_names(), self.route_names(),
-                       self.existing_goods)
-
-        start, end, traffic, length, danger = extract_route(attr)
-
-        for good in traffic.keys():
-            if good in self.export_complete[start]:
-                raise ValueError('Export of {} out of city {} is already fully defined.'
-                                 .format(good, start))
-
-        # Goods not given are not traded over the route
-        traffic.setdefault(0)
-
-        # If an entry on traffic is 'rest', it is replaced by
-        # the corresponding value and the export completed
-        # TODO: move logic to just before assembling the matrix to stop from "completing"
-        if 'rest' in traffic.values():
-            for k, v in traffic.items():
-                if v == 'rest':
-                    self.export_complete[start].add(k)
-                    r = np.sum(x for e, x in nx.get_edge_attributes(self.map, k).items()
-                               if e[0] == start)
-                    traffic[k] = 1.0 - r
-
-        # TODO: Ideally the traffic would be stored in a dict in the attribute
-        # 'traffic'. But then nx.attr_matrix (in __assemble__) needs ot be
-        # re-implemented
-
-        self.map.add_edge(start, end,
-                          attr_dict=traffic,
-                          traffic=traffic,
-                          name=name,
-                          danger=danger,
-                          length=length)
+                nx.set_node_attributes(
+                    self.map, k,
+                    dict(zip(self.__city_order__, n_.tolist()[0]))
+                )
+                self.total_stock[k] = self.calc_stock(k)
+                self.TRADE_state[i] = n_ / self.total_stock[k]
 
     # This interface is not really stable, it is for internal use or not final
     def get_all_city(self, field, item=None):
@@ -395,51 +377,7 @@ class Economy():
         plt.title(stuff)
 
     # Matrix and evolution functions
-    def __assemble__(self):
-        nx.freeze(self.map)
-
-        self.__city_order__ = self.city_order().keys()
-
-        ### TRADE ###
-        self.TRADE_matrix = []
-        self.TRADE_state  = []
-        m = self.map
-        for k in self.existing_goods:
-            # This produces a left stochastic matrix
-            A = nx.attr_matrix(self.map, edge_attr=k, rc_order=self.__city_order__)
-            if not all(is_within_eps(1.0-x) for x in np.sum(A,axis=1)):
-                print np.sum(A,axis=1)
-                raise ValueError('Route traffics are not normalized')
-            self.TRADE_matrix.append(A)
-
-            P = np.matrix([0]*len(self.__city_order__))
-            if self.total_stock[k] > 0:
-                for j,n in enumerate(self.__city_order__):
-                    P[0,j] = m.node[n][k]
-                P = P / self.total_stock[k]
-
-            self.TRADE_state.append(P)
-        ### TRADE ###
-
-    def step(self):
-        if not nx.is_frozen(self.map):
-            self.__assemble__()
-
-        for i,k in enumerate(self.existing_goods):
-            if self.total_stock[k] > 0:
-                p_ = self.TRADE_state[i] * self.TRADE_matrix[i]
-                dn = 0.0
-                #              #dn = s * S_rate (i) - d * D_rate(i); # sources dist
-                n_ = np.maximum(p_ * self.total_stock[k] + dn, 0.0)
-
-                # Minimize change of total stock due to round off
-                n_ = (np.round(n_), np.round(np.sum(n_ - np.round(n_))))
-                n_ = n_[0] + n_[1]*(n_[0]==n_[0].min());
-
-                nx.set_node_attributes(self.map, k, \
-                                dict(zip(self.__city_order__,n_.tolist()[0])))
-                self.total_stock[k] = self.calc_stock(k);
-                self.TRADE_state[i] = n_ / self.total_stock[k]
+    
 
     def update_trade(self):
         # Calculate probability of route
