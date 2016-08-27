@@ -26,7 +26,8 @@ import networkx as nx
 import numpy as np
 
 from operator import itemgetter
-from collections import OrderedDict, defaultdict
+from collections import OrderedDict, defaultdict, namedtuple
+from itertools import groupby
 __route_fields__ = ('start', 'end', 'traffic', 'length', 'danger')
 __city_fields__ = ('stats', 'pos', 'inventory')
 
@@ -47,41 +48,164 @@ def extract_city(attr):
     return tuple(attr.get(k, None) for k in __city_fields__)
 
 
-def validate_route(name, attr, existing_cities, existing_routes, valid_goods):
-    for k in attr.keys():
-        if k not in __route_fields__:
-            raise ValueError('{} parameter not valid'.format(k))
+def validate_routes(routes, existing_markets, valid_goods):
+    route_names = [name for name, _, _, _ in routes]
+    repeated = [name for name, _, _, _ in routes if route_names.count(name) > 1]
 
-    start, end, traffic, length, danger = extract_route(attr)
+    if len(repeated) > 0:
+        repeated = ', '.join(repeated)
+        raise NameError('Repeated route names in definition: {}.'.format(repeated))
 
-    if start not in existing_cities:
-        raise NameError('City {} not in economy.'.format(start))
+    market_names = [market.name for market in existing_markets]
 
-    if end not in existing_cities:
-        raise NameError('City {} not in economy'.format(end))
+    for name, start, end, traffic in routes:
+        if start not in market_names:
+            raise NameError('City {} not in economy.'.format(start))
 
-    if name in existing_routes:
-        raise NameError('Route already exist')
+        if end not in market_names:
+            raise NameError('City {} not in economy'.format(end))
 
-    for good in traffic.keys():
-        if good not in valid_goods:
-            raise KeyError('Tradeable {} undefined.'.format(good))
+        for good in traffic._asdict().keys():
+            if good not in valid_goods:
+                raise KeyError('Tradeable {} of route {} undefined.'.format(good, name))
 
+        try:
+            for g in valid_goods:
+                getattr(traffic, g)
+        except:
+            raise ValueError("{} does not contain {}".format(traffic, g))
 
-def validate_market(name, attr, existing_cities, valid_goods):
-    inventory = attr['inventory']
+def validate_markets(markets, valid_goods):
+    names = [market.name for market in markets]
+    repeated = [name for name in set(names) if names.count(name) > 1]
 
-    for k in attr.keys():
-        if k not in __city_fields__:
-            raise KeyError(k)
+    if len(repeated) > 0:
+        repeated = ', '.join(repeated)
+        raise NameError('Repeated market names in definition: {}.'.format(repeated))
 
-    if name in existing_cities:
-        raise NameError('City {} already in economy.'.format(name))
-
-    for k in inventory:
-        if k not in valid_goods:
+    valid_goods = set(valid_goods)
+    for name, inventory in markets:
+        invalid_inventory = set(inventory._asdict().keys()) - valid_goods
+        if len(invalid_inventory) > 0:
             # City can't add tradeables
-            raise KeyError(k)
+            raise KeyError("City {} has invalid inventories {}"
+                           .format(name, invalid_inventory))
+
+iEconomyBP = namedtuple("EconomyBlueprint", ('tradeables', 'markets', 'routes'))
+iMarketBP = namedtuple("MarketBlueprint", ('name', 'tradeables'))
+iRouteBP = namedtuple("RouteBlueprint", ('name', 'start', 'end', 'traffic'))
+
+
+def validate(bp):
+    tradeables, markets, routes = bp
+    validate_markets(markets, tradeables)
+    validate_routes(routes, markets, tradeables)
+
+
+def replace_in_route(route, replacements):
+    return iRouteBP(
+        route.name,
+        route.start,
+        route.end,
+        route.traffic._replace(**replacements)
+    )
+
+
+def autocomplete(bp):
+    ud = namedtuple("UsefulData", ['name', 'start', 'good', 'qty'])
+    # We detect routes that need autocompletion
+    # extract data from the route if any outgoing good needs to be completed
+    to_autocomplete = [ud(name, start, good, qty)
+                       for name, start, end, traffic in bp.routes
+                       for good, qty in traffic._asdict().items()]
+
+    if not to_autocomplete:
+        return bp
+
+    # Group outgoing goods by starting town and good name
+    def grouping(x):
+        return (x.start, x.good)
+
+    to_autocomplete = sorted(to_autocomplete, key=grouping)
+    outgoing = groupby(to_autocomplete, grouping)
+    replacements = {}
+    for info, group in outgoing:
+        group = list(group)
+        try:
+            route_name = next(n for n, _ ,_ ,q in group if q == 'rest')
+        except StopIteration, e:
+            continue
+
+        town_name, good_name = info
+        total = sum(qty for _, _, _, qty in group if qty != 'rest')
+
+        if route_name not in replacements:
+            replacements[route_name] = dict()
+
+        replacements[route_name][good] = 1 - total
+
+    # Return new BT with 'rest' replaced by the total
+    return iEconomyBP(
+        bp.tradeables,
+        bp.markets,
+        tuple(route if route.name not in replacements else
+              replace_in_route(route, replacements[route.name])
+              for route in bp.routes))
+
+
+class EconomyBlueprintFactory():
+    """Create a valid description of an economy.
+
+    This Factory creates a blueprint valid for constructing an economy.
+    It provides validation logic plus parsing of shortcuts like the 'rest' keyword.
+    """
+    def __init__(self, blueprintData=iEconomyBP((), (), ())):
+        self.bp = blueprintData
+
+    def trades(self, tradeables):
+        bp = self.bp
+        return EconomyBlueprintFactory(
+            iEconomyBP(
+                bp.tradeables + tuple(tradeables),
+                bp.markets,
+                bp.routes))
+
+    def hasMarket(self, name, inventory):
+        market = iMarketBP(name, inventory)
+        bp = self.bp
+        return EconomyBlueprintFactory(
+            iEconomyBP(
+                bp.tradeables,
+                bp.markets + (market, ),
+                bp.routes))
+
+    def hasRoute(self, name, start, end, traffic):
+        """This blueprint has a unidirectional route to the economy.
+
+        Args:
+            name: The name of the route.
+            start: The name of the market that sells on this route.
+            end: The name of the market that buys on this route.
+            traffic: Dictionary-like structure detailing the goods being traded on this
+                route in the form: { good: volume|'rest' } .
+                When used as a value, the keyword 'rest' means that this route will trade
+                all the surplus of good from town 'start' to town 'end'
+        """
+        route = iRouteBP(name, start, end, traffic)
+        bp = self.bp
+        return EconomyBlueprintFactory(
+            iEconomyBP(
+                bp.tradeables,
+                bp.markets,
+                bp.routes + (route,)))
+
+    def blueprint(self):
+        validate(self.bp)
+        return autocomplete(self.bp)
+
+    def build(self):
+        return Economy(self.blueprint())
+
 
 class Economy():
     """A simulation of the trading aspect of an economy.
@@ -91,14 +215,13 @@ class Economy():
     """
 
     # This will be the stable interface
-    def __init__(self, tradeables):
+    def __init__(self, blueprint):
 
         # contains the good for which export is already fully defined
         self.export_complete = defaultdict(set)
 
         self.map = nx.MultiDiGraph()
 
-        sorted_tradeables = sorted(tradeables, itemgetter(0))
         self.total_stock = OrderedDict().fromkeys(sorted_tradeables, 0)
         self.existing_goods = self.total_stock.keys()
 
