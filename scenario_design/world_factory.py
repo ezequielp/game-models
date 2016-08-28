@@ -1,16 +1,16 @@
 import re
 from map_generator import ImageToMap
-
-import sys
-from economy import economy
-
+from collections import namedtuple
 import xml.etree.ElementTree as ET
 try:
     import yaml
 except ImportError:
     raise Exception("yaml not found. Install using:\npip install PyYAML")
 
+import sys
 sys.path.append('../src')
+
+from economy import economy
 
 
 def tuple_constructor(loader, node):
@@ -27,6 +27,7 @@ class WorldFactoryYaml():
     """
     Parses config file and generates defined objects
     """
+
     def __init__(self, config):
         yaml.add_constructor(u'!position', tuple_constructor)
 
@@ -53,20 +54,30 @@ class WorldFactoryYaml():
                     cell.append(ET.Element('property', attrib=attrib))
 
         self.xml = xml
-        # Create Economy object
+        # Create Economy Blueprint object
+        blueprint = economy.EconomyBlueprintFactory()
+        tradeables = parsed_file['economy']['tradeables']
+        blueprint = blueprint.trades(tradeables)
 
-        world_economy = economy.Economy(parsed_file['economy']['tradeables'])
-        for city in parsed_file['cities']:
-            world_economy.add_market(city['name'])
+        tradeableType = namedtuple("tradeables", tradeables)
+        noInventory = tradeableType(*((0, ) * len(tradeables)))
 
-        for route in parsed_file['economy']['routes']:
-            world_economy.add_route(
+        blueprint = reduce(
+            lambda bp, city: bp.hasMarket(city['name'], noInventory),
+            parsed_file['cities'],
+            blueprint
+        )
+        blueprint = reduce(
+            lambda bp, route: bp.hasRoute(
                 '{}-{}'.format(route['from'], route['to']),
-                source=route['from'],
-                destination=route['to'],
-                traffic=route['materials'])
+                route['from'],
+                route['to'],
+                tradeableType(*[route['materials'][t] for t in tradeableType._fields])),
+            parsed_file['economy']['routes'],
+            blueprint
+        )
 
-        self.world_economy = world_economy
+        self.world_economy = blueprint.build()
 
     def get_map_xml(self):
         """Return map parsed from config's terrain with added cities.

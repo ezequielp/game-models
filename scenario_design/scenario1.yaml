@@ -61,26 +61,27 @@ economy:
 
         - from: Wolfila
           to: Wolfila
-          materials: {wood: 0.5,  stone: 0.5, sand: 0.9, fish: 1,   milk: 0.7, weat: 0.8, chaff: 0.8, cows: 1, sheeps: 0.8, dogs: 0.5}
+          materials: {wood: 0.5,  stone: 0.5, sand: 0.9, fish: 1.0, milk: 0.7, weat: 0.8, chaff: 0.8, cows: 1, sheeps: 0.8, dogs: 0.5}
 
         - from: Wolfila
           to: Sasela
-          materials: {wood: 0.25, stone: 0.3, sand: 0.1, fish: 0,   milk: 0.1, weat: 0.0, chaff: 0.0, cows: 0, sheeps: 0.0, dogs: 0.1}
+          materials: {wood: 0.25, stone: 0.3, sand: 0.1, fish: 0.0, milk: 0.1, weat: 0.1, chaff: 0.0, cows: 0, sheeps: 0.0, dogs: 0.1}
 
         - from: Wolfila
           to: Heamoor
-          materials: {wood: 0.2,  stone: 0.1, sand: 0.0, fish: 0,   milk: 0.0, weat: 0.0, chaff: 0.0, cows: 0, sheeps: 0.0, dogs: 0.1}
+          materials: {wood: 0.2,  stone: 0.1, sand: 0.0, fish: 0.0, milk: 0.0, weat: 0.0, chaff: 0.2, cows: 0, sheeps: 0.0, dogs: 0.1}
 
         - from: Wolfila
           to: Sago
-          materials: {wood: 0.05, stone: 0.0, sand: 0.0, fish: 0,   milk: 0.2, weat: 0.1, chaff: 0.0, cows: 0, sheeps: 0.2, dogs: 0.1}
+          materials: {wood: 0.05, stone: 0.1, sand: 0.0, fish: 0.0, milk: 0.2, weat: 0.1, chaff: 0.0, cows: 0, sheeps: 0.2, dogs: 0.3}
 
 
     sources: 
         - name: Lake 
-          materials: {stone: 0.1}
+          materials: {stone: 0.1, sand: 10, }
 
         - name: Wood
+          materials: {}
         - name: Beach
         - name: Grassland
         - name: Sheep shed

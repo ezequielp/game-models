@@ -19,6 +19,7 @@ base_blueprint = economy.EconomyBlueprintFactory() \
     .hasRoute("route 7", start="town c", end="town d", traffic=Goods("rest")) \
     .hasRoute("route 8", start="town d", end="town d", traffic=Goods("rest"))
 
+
 class EconomyBlueprintFactoryTestCase(unittest.TestCase):
     def setUp(self):
         self.bp = base_blueprint
@@ -40,7 +41,10 @@ class EconomyBlueprintFactoryTestCase(unittest.TestCase):
         bp = self.bp
         # Can't add duplicate routes
         with self.assertRaises(NameError):
-            bp.hasRoute("route 1", start="town c", end="town d", traffic=Goods(0.8)).blueprint()
+            bp.hasRoute(
+                "route 1", start="town c", end="town d",
+                traffic=Goods(0.8)
+            ).blueprint()
 
         # Can't add duplicate market
         with self.assertRaises(NameError):
@@ -53,14 +57,25 @@ class EconomyBlueprintFactoryTestCase(unittest.TestCase):
 
         # ...or to routes
         with self.assertRaises(KeyError):
-            bp.hasRoute("route weird", start="town a", end="town d", traffic=ExtraneousGoods(10, 20)).blueprint()
+            bp.hasRoute(
+                "route weird", start="town a", end="town d",
+                traffic=ExtraneousGoods(10, 20)
+            ).blueprint()
 
         # Can't add routes from non existing markets
         with self.assertRaises(NameError):
-            bp.hasRoute("route imaginary", start="neverland", end="town a", traffic=Goods(10)).blueprint()
+            bp.hasRoute(
+                "route imaginary",
+                start="neverland", end="town a",
+                traffic=Goods(10)
+            ).blueprint()
 
         with self.assertRaises(NameError):
-            bp.hasRoute("route imaginary", start="town a", end="neverland", traffic=Goods(10)).blueprint()
+            bp.hasRoute(
+                "route imaginary",
+                start="town a", end="neverland",
+                traffic=Goods(10)
+            ).blueprint()
 
 
 class EconomyTestCase(unittest.TestCase):
@@ -98,6 +113,7 @@ class EconomyTestCase(unittest.TestCase):
         self.assertAlmostEqual(0.6, economy.traffic("route 4", "swords"))
         self.assertAlmostEqual(0.1, economy.traffic("route 5", "swords"))
 
+# TODO: decide best way to run complex queries (database?)
 #     def test_find_routes(self):
 #         """More complex queries can be performed"""
 #         return

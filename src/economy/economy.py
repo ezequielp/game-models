@@ -28,7 +28,8 @@ import numpy as np
 from collections import OrderedDict, namedtuple
 from itertools import groupby
 
-iEconomyBP = namedtuple("EconomyBlueprint", ('tradeables', 'markets', 'routes'))
+iEconomyBP = namedtuple(
+    "EconomyBlueprint", ('tradeables', 'markets', 'routes'))
 iMarketBP = namedtuple("MarketBlueprint", ('name', 'tradeables'))
 iRouteBP = namedtuple("RouteBlueprint", ('name', 'start', 'end', 'traffic'))
 
@@ -43,11 +44,13 @@ def is_within_eps(value):
 
 def validate_routes(routes, existing_markets, valid_goods):
     route_names = [name for name, _, _, _ in routes]
-    repeated = [name for name, _, _, _ in routes if route_names.count(name) > 1]
+    repeated = [name for name, _, _,
+                _ in routes if route_names.count(name) > 1]
 
     if len(repeated) > 0:
         repeated = ', '.join(repeated)
-        raise NameError('Repeated route names in definition: {}.'.format(repeated))
+        raise NameError(
+            'Repeated route names in definition: {}.'.format(repeated))
 
     market_names = [market.name for market in existing_markets]
 
@@ -60,7 +63,8 @@ def validate_routes(routes, existing_markets, valid_goods):
 
         for good in traffic._asdict().keys():
             if good not in valid_goods:
-                raise KeyError('Tradeable {} of route {} undefined.'.format(good, name))
+                raise KeyError(
+                    'Tradeable {} of route {} undefined.'.format(good, name))
 
         try:
             for g in valid_goods:
@@ -75,7 +79,8 @@ def validate_markets(markets, valid_goods):
 
     if len(repeated) > 0:
         repeated = ', '.join(repeated)
-        raise NameError('Repeated market names in definition: {}.'.format(repeated))
+        raise NameError(
+            'Repeated market names in definition: {}.'.format(repeated))
 
     valid_goods = set(valid_goods)
     for name, inventory in markets:
@@ -84,6 +89,33 @@ def validate_markets(markets, valid_goods):
             # City can't add tradeables
             raise KeyError("City {} has invalid inventories {}"
                            .format(name, invalid_inventory))
+
+
+def validate_route_traffic(routes, valid_goods):
+    routes = group_expanded_routes(expand_routes(routes))
+    for (start, good), group in routes:
+        outgoing = sum(qty for _, _, _, qty in group)
+        print start, good, outgoing
+        if not is_within_eps(outgoing - 1):
+            raise ValueError("Too {} outgoing {} from {}"
+                             .format("much" if outgoing > 1 else "little", good, start))
+
+
+def expand_routes(routes):
+    ud = namedtuple("UsefulData", ['name', 'start', 'good', 'qty'])
+    # We detect routes that need autocompletion
+    # extract data from the route if any outgoing good needs to be completed
+    return [ud(name, start, good, qty) for name, start, end, traffic in routes
+            for good, qty in traffic._asdict().items()]
+
+
+def group_expanded_routes(expanded_routes):
+    # Group outgoing goods by starting town and good name
+    def grouping(x):
+        return (x.start, x.good)
+
+    sorted_routes = sorted(expanded_routes, key=grouping)
+    return groupby(sorted_routes, grouping)
 
 
 def validate(bp):
@@ -102,22 +134,13 @@ def replace_in_route(route, replacements):
 
 
 def autocomplete(bp):
-    ud = namedtuple("UsefulData", ['name', 'start', 'good', 'qty'])
-    # We detect routes that need autocompletion
-    # extract data from the route if any outgoing good needs to be completed
-    to_autocomplete = [ud(name, start, good, qty)
-                       for name, start, end, traffic in bp.routes
-                       for good, qty in traffic._asdict().items()]
+    to_autocomplete = expand_routes(bp.routes)
 
-    if not to_autocomplete:
+    if 'rest' not in (qty for _, _, _, qty in to_autocomplete):
         return bp
 
-    # Group outgoing goods by starting town and good name
-    def grouping(x):
-        return (x.start, x.good)
+    outgoing = group_expanded_routes(to_autocomplete)
 
-    to_autocomplete = sorted(to_autocomplete, key=grouping)
-    outgoing = groupby(to_autocomplete, grouping)
     replacements = {}
     for info, group in outgoing:
         group = list(group)
@@ -132,7 +155,7 @@ def autocomplete(bp):
         if route_name not in replacements:
             replacements[route_name] = dict()
 
-        replacements[route_name][good] = 1 - total
+        replacements[route_name][good_name] = 1 - total
 
     # Return new BT with 'rest' replaced by the total
     return iEconomyBP(
@@ -149,6 +172,7 @@ class EconomyBlueprintFactory():
     This Factory creates a blueprint valid for constructing an economy.
     It provides validation logic plus parsing of shortcuts like the 'rest' keyword.
     """
+
     def __init__(self, blueprintData=iEconomyBP((), (), ())):
         self.bp = blueprintData
 
@@ -191,7 +215,9 @@ class EconomyBlueprintFactory():
 
     def blueprint(self):
         validate(self.bp)
-        return autocomplete(self.bp)
+        self.bp = autocomplete(self.bp)
+        validate_route_traffic(self.bp.routes, self.bp.tradeables)
+        return self.bp
 
     def build(self):
         return Economy(self.blueprint())
@@ -246,7 +272,8 @@ class Economy():
         return element in self.city_names()
 
     def stock(self, name, good=None):
-        ret = {x: self.map.node[name][x] for x in self.map.node[name]['inventory']}
+        ret = {x: self.map.node[name][x]
+               for x in self.map.node[name]['inventory']}
         if good:
             ret = ret[good]
         return ret
@@ -275,7 +302,8 @@ class Economy():
         m = self.map
         for k in self.existing_goods:
             # This produces a left stochastic matrix
-            A = nx.attr_matrix(self.map, edge_attr=k, rc_order=self.__city_order__)
+            A = nx.attr_matrix(self.map, edge_attr=k,
+                               rc_order=self.__city_order__)
             if not all(is_within_eps(1.0 - x) for x in np.sum(A, axis=1)):
                 raise ValueError('Route traffics are not normalized')
 
@@ -313,7 +341,8 @@ class Economy():
         if field not in self.city_fields:
             raise KeyError(field)
         if item:
-            ret = {n[0]: n[1][field][item] for n in self.map.nodes_iter(data=True)}
+            ret = {n[0]: n[1][field][item]
+                   for n in self.map.nodes_iter(data=True)}
         else:
             ret = {n[0]: n[1][field] for n in self.map.nodes_iter(data=True)}
         return ret
@@ -330,20 +359,22 @@ class Economy():
         elif name and not stuff:
             for n in self.map[name]:
                 neigh = self.map[name][n][0]
-                ret[n] = {k:v for (k,v) in neigh.iteritems() if k in neigh['traffic']}
+                ret[n] = {k: v for (k, v) in neigh.iteritems()
+                          if k in neigh['traffic']}
         elif not name and stuff:
             for c in self.map.nodes_iter():
                 ret[c] = self.city_export(c, stuff)
         else:
             for c in self.map.nodes_iter():
-                ret[c] = {s:self.city_export(c,s) for s in self.existing_goods}
+                ret[c] = {s: self.city_export(c, s)
+                          for s in self.existing_goods}
         return ret
 
-    def is_city_export_ok(self,name,stuff):
-        return is_within_eps(1.0-np.sum(self.city_export(name,stuff).values()))
-    
+    def is_city_export_ok(self, name, stuff):
+        return is_within_eps(1.0 - np.sum(self.city_export(name, stuff).values()))
+
     def city_order(self):
-        return dict([(k,i) for i, k in enumerate(self.map.nodes_iter())])
+        return dict([(k, i) for i, k in enumerate(self.map.nodes_iter())])
 
     def route_names(self):
         return (n[2]['name'] for n in self.map.edges_iter(data=True))
@@ -352,18 +383,18 @@ class Economy():
 
     def stock_order(self):
         '''Get keys order of stock'''
-        return dict([(k,i) for i,k in enumerate(self.total_stock.keys())])
+        return dict([(k, i) for i, k in enumerate(self.total_stock.keys())])
 
     def calc_stock(self, stuff=None):
         if stuff:
             if not stuff in self.existing_goods:
                 raise KeyError('Good {} not in stocks.'.format(stuff))
             else:
-                return sum (x[1][stuff] for x in self.map.nodes_iter(data=True))
+                return sum(x[1][stuff] for x in self.map.nodes_iter(data=True))
         else:
             m = dict()
             for k in self.existing_goods:
-                m[k] = sum (x[1][k] for x in self.map.nodes_iter(data=True))
+                m[k] = sum(x[1][k] for x in self.map.nodes_iter(data=True))
             return m
 
     def plot_graph(self, stuff):
@@ -371,13 +402,14 @@ class Economy():
         plt.ion()
         plt.axis('off')
         pos = nx.spring_layout(self.map)
-        nx.draw_networkx (self.map, pos=pos, node_size=4000)
-        traffic = dict([(e[0:2],e[2][stuff]) for e in self.map.edges_iter(data=True)])
-        nx.draw_networkx_edge_labels (self.map, pos=pos, edge_labels=traffic, label_pos=0.7)
+        nx.draw_networkx(self.map, pos=pos, node_size=4000)
+        traffic = dict([(e[0:2], e[2][stuff])
+                        for e in self.map.edges_iter(data=True)])
+        nx.draw_networkx_edge_labels(
+            self.map, pos=pos, edge_labels=traffic, label_pos=0.7)
         plt.title(stuff)
 
     # Matrix and evolution functions
-    
 
     def update_trade(self):
         # Calculate probability of route
@@ -385,30 +417,31 @@ class Economy():
         for c in Trade:
             # get city mixing vector
             city_stats = Trade.node[c]['stats']
-            A   = np.matrix ([Trade.node[c][k] for k in city_stats]+[-1]).T
+            A = np.matrix([Trade.node[c][k] for k in city_stats] + [-1]).T
 
-            tmp = np.zeros([len(self.existing_goods),1])
+            tmp = np.zeros([len(self.existing_goods), 1])
             # loop over neighbors of current city
             for n in Trade[c]:
                 # FIXME: Multidigraph!
-                d  = Trade[c][n][0]['danger']
-                l  = Trade[c][n][0]['length']
-                for i,t in enumerate(self.existing_goods):
+                d = Trade[c][n][0]['danger']
+                l = Trade[c][n][0]['length']
+                for i, t in enumerate(self.existing_goods):
                     # Stock difference
-                    dx = (Trade.node[n][t] - Trade.node[c][t]) / self.total_stock[t]
+                    dx = (Trade.node[n][t] - Trade.node[c]
+                          [t]) / self.total_stock[t]
                     # Potential gain TODO
                     #dv = (Trade.node[n]['stock'][1] - Trade.node[c]['stock'][1])/total_value
                     #W  = np.matrix([dx,dv,d,l])
 
                     # FIXME order of city stats!
-                    W  = np.matrix([dx,d,l])
-                    V  = W * A
-                    Trade[c][n][0][t] = np.exp (V)
+                    W = np.matrix([dx, d, l])
+                    V = W * A
+                    Trade[c][n][0][t] = np.exp(V)
                     tmp[i] = tmp[i] + Trade[c][n][0][t]
 
             # Normalize with softmax
             for n in Trade[c]:
-                for i,t in enumerate(self.existing_goods):
+                for i, t in enumerate(self.existing_goods):
                     Trade[c][n][0][t] = Trade[c][n][0][t] / tmp[i]
 
 # vim: set expandtab tabstop=4 :
